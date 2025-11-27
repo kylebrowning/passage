@@ -7,8 +7,10 @@
 
 import Vapor
 
+// MARK: - User
+
 protocol User: Authenticatable, Sendable {
-    associatedtype Id: Codable, Hashable, Sendable
+    associatedtype Id: CustomStringConvertible, Codable, Hashable, Sendable
 
     var id: Id? { get }
 
@@ -25,6 +27,18 @@ protocol User: Authenticatable, Sendable {
     var isEmailVerified: Bool { get }
 
     var isPhoneVerified: Bool { get }
+}
+
+extension User {
+
+    var requiredIdAsString: String {
+        get throws {
+            guard let id = id else {
+                throw AuthenticationError.unexpected(message: "User ID is missing")
+            }
+            return String(describing: id)
+        }
+    }
 
 }
 
@@ -45,3 +59,14 @@ extension User {
         }
     }
 }
+
+// MARK: - User Info
+
+protocol UserInfo: Sendable {
+
+    var email: String? { get }
+
+    var phone: String? { get }
+
+}
+

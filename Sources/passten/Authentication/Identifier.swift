@@ -26,10 +26,6 @@ extension Identifier {
         return kind.errorWhenIdentifierAlreadyRegistered
     }
 
-    var errorWhenIdentifierIsNotRegistered: AuthenticationError {
-        return kind.errorWhenIdentifierIsNotRegistered
-    }
-
     var errorWhenIdentifierIsInvalid: AuthenticationError {
         return kind.errorWhenIdentifierIsInvalid
     }
@@ -45,17 +41,6 @@ extension Identifier.Kind {
             return .phoneAlreadyRegistered
         case .username:
             return .usernameAlreadyRegistered
-        }
-    }
-
-    var errorWhenIdentifierIsNotRegistered: AuthenticationError {
-        switch self {
-        case .email:
-            return .invalidEmailOrPassword
-        case .phone:
-            return .invalidPhoneOrPassword
-        case .username:
-            return .invalidUsernameOrPassword
         }
     }
 
