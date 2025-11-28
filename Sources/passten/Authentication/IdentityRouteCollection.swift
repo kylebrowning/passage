@@ -39,6 +39,16 @@ extension IdentityRouteCollection {
 
         try await req.store.users.create(with: credential)
 
+        // Send verification code after registration
+        // Find the newly created user and send verification based on identifier type
+        if let user = try await req.store.users.find(byIdentifier: credential.identifier) {
+            // Fire-and-forget: don't fail registration if verification send fails
+            try? await req.verificationService.sendVerificationCode(
+                for: user,
+                identifierKind: credential.identifier.kind
+            )
+        }
+
         return .ok
     }
 
