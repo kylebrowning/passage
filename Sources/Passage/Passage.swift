@@ -13,10 +13,15 @@ public struct Passage: Sendable {
 
     public func configure(
         services: Services,
+        contracts: Contracts = .init(),
         configuration: Configuration,
     ) async throws {
 
-        self.storage = Storage(services: services, configuration: configuration)
+        self.storage = Storage(
+            services: services,
+            contracts: contracts,
+            configuration: configuration
+        )
 
         try await app.jwt.keys.add(jwksJSON: configuration.jwt.jwks.json)
 
@@ -55,6 +60,15 @@ public struct Passage: Sendable {
             ))
         }
 
+        //
+        if configuration.views.enabled {
+            try Views.registerLeafTempleates(on: app)
+            try app.register(collection: ViewsRouteCollection(
+                config: configuration.views,
+                group: configuration.routes.group
+            ))
+        }
+
         // Register verification jobs if queues are enabled
         if configuration.verification.useQueues {
             app.queues.add(Verification.SendEmailCodeJob())
@@ -63,8 +77,8 @@ public struct Passage: Sendable {
 
         // Register restoration jobs if queues are enabled
         if configuration.restoration.useQueues {
-            app.queues.add(Restoration.SendEmailResetCodeJob())
-            app.queues.add(Restoration.SendPhoneResetCodeJob())
+            app.queues.add(Restoration.SendEmailPasswordResetCodeJob())
+            app.queues.add(Restoration.SendPhonePasswordResetCodeJob())
         }
 
         try oauth.register(config: configuration)
@@ -78,6 +92,10 @@ extension Passage {
 
     var services: Services {
         storage.services
+    }
+
+    var contracts: Contracts {
+        storage.contracts
     }
 
     var configuration: Configuration {

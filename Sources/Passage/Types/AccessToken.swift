@@ -1,0 +1,48 @@
+import Foundation
+import JWTKit
+
+public struct AccessToken: Sendable {
+
+    // Standard claims
+    let subject: SubjectClaim
+    let expiration: ExpirationClaim
+    let issuedAt: IssuedAtClaim
+    let issuer: IssuerClaim?
+    let audience: AudienceClaim?
+
+    // Authorization claims
+    let scope: String?
+
+    init(
+        userId: String,
+        issuedAt: Date = .now,
+        expiresAt: Date,
+        issuer: String?,
+        audience: String?,
+        scope: String?
+    ) {
+        self.subject = SubjectClaim(value: userId)
+        self.issuedAt = IssuedAtClaim(value: issuedAt)
+        self.expiration = ExpirationClaim(value: expiresAt)
+        self.issuer = issuer.map { IssuerClaim(value: $0) }
+        self.audience = audience.map { AudienceClaim(value: $0) }
+        self.scope = scope
+    }
+}
+
+// MARK: - JWTPayload
+
+extension AccessToken: JWTPayload {
+    enum CodingKeys: String, CodingKey {
+        case subject = "sub"
+        case expiration = "exp"
+        case issuedAt = "iat"
+        case issuer = "iss"
+        case audience = "aud"
+        case scope
+    }
+
+    public func verify(using algorithm: some JWTAlgorithm) async throws {
+        try expiration.verifyNotExpired()
+    }
+}

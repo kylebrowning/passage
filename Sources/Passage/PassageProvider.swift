@@ -10,13 +10,16 @@ extension Passage {
         }
 
         let services: Services
+        let contracts: Contracts
         let configuration: Configuration
 
         init(
             services: Services,
+            contracts: Contracts,
             configuration: Configuration
         ) {
             self.services = services
+            self.contracts = contracts
             self.configuration = configuration
         }
     }
@@ -63,6 +66,10 @@ public extension Application {
 // MARK: - Request Support
 
 extension Request {
+
+    var contracts: Passage.Contracts {
+        application.passage.contracts
+    }
 
     var store: any Passage.Store {
         application.passage.store

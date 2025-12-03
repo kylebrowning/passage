@@ -1,0 +1,59 @@
+import Foundation
+
+public extension Passage {
+
+    struct Services: Sendable {
+        let store: any Store
+        let random: any RandomGenerator
+        let emailDelivery: (any EmailDelivery)?
+        let phoneDelivery: (any PhoneDelivery)?
+        let federatedLogin: (any FederatedLoginService)?
+
+        public init(
+            store: any Store,
+            random: any RandomGenerator,
+            emailDelivery: (any EmailDelivery)?,
+            phoneDelivery: (any PhoneDelivery)?,
+            federatedLogin: (any FederatedLoginService)? = nil
+        ) {
+            self.store = store
+            self.random = random
+            self.emailDelivery = emailDelivery
+            self.phoneDelivery = phoneDelivery
+            self.federatedLogin = federatedLogin
+        }
+
+        public init(
+            store: any Store,
+            emailDelivery: (any EmailDelivery)?,
+            phoneDelivery: (any PhoneDelivery)?,
+            federatedLogin: (any FederatedLoginService)? = nil
+        ) {
+            self.store = store
+            self.random = DefaultRandomGenerator()
+            self.emailDelivery = emailDelivery
+            self.phoneDelivery = phoneDelivery
+            self.federatedLogin = federatedLogin
+        }
+    }
+
+}
+
+extension Passage {
+
+    var store: any Store {
+        services.store
+    }
+
+    var random: any RandomGenerator {
+        services.random
+    }
+
+    var emailDelivery: (any EmailDelivery)? {
+        services.emailDelivery
+    }
+
+    var phoneDelivery: (any PhoneDelivery)? {
+        services.phoneDelivery
+    }
+}

@@ -22,8 +22,9 @@ struct PassageRouteCollection: RouteCollection {
 extension PassageRouteCollection {
 
     fileprivate func register(_ req: Request) async throws -> HTTPStatus {
-        try RegisterForm.validate(content: req)
-        let register = try req.content.decode(RegisterForm.self)
+        let formType = req.contracts.registerForm
+        try formType.validate(content: req)
+        let register = try req.content.decode(formType)
         try register.validate()
 
         let hash = try await req.password.async.hash(register.password)
@@ -50,8 +51,10 @@ extension PassageRouteCollection {
 extension PassageRouteCollection {
 
     fileprivate func login(_ req: Request) async throws -> AuthUser {
-        try LoginForm.validate(content: req)
-        let login = try req.content.decode(LoginForm.self)
+        let formType = req.contracts.loginForm
+        try formType.validate(content: req)
+        let login = try req.content.decode(formType)
+        try login.validate()
 
         let identifier = try login.asIdentifier()
 
@@ -106,7 +109,9 @@ extension PassageRouteCollection {
 extension PassageRouteCollection {
 
     fileprivate func refreshToken(_ req: Request) async throws -> AuthUser {
-        let form = try req.content.decode(RefreshTokenForm.self)
+        let formType = req.contracts.refreshTokenForm
+        try formType.validate(content: req)
+        let form = try req.content.decode(formType.self)
 
         let hash = req.random.hashOpaqueToken(token: form.refreshToken)
 
@@ -157,7 +162,9 @@ extension PassageRouteCollection {
 extension PassageRouteCollection {
 
     fileprivate func logout(_ req: Request) async throws -> HTTPStatus {
-        let form = try req.content.decode(RefreshTokenForm.self)
+        let formType = req.contracts.refreshTokenForm
+        try formType.validate(content: req)
+        let form = try req.content.decode(formType.self)
 
         let hash = req.random.hashOpaqueToken(token: form.refreshToken)
         try await req.store.tokens.revokeRefreshToken(withHash: hash)
