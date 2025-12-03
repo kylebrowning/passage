@@ -62,4 +62,14 @@ extension Passage.Views {
         )
     }
 
+    func handleResetPasswordRequestForm() async throws {
+        try PasswordResetRequestForm.validate(request)
+        let form = try request.content.decode(PasswordResetRequestForm.self)
+        try form.validate()
+
+        let identifier = try form.asIdentifier()
+
+        try await request.restoration.requestReset(for: identifier)
+    }
+
 }

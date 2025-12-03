@@ -14,12 +14,29 @@ struct ViewsRouteCollection: RouteCollection {
                 try await req.views.renderResetPasswordRequestView()
             }
             grouped.post(path) { req in
-                var components = URLComponents()
-                components.path = path.string
-                components.queryItems = [
-                    URLQueryItem(name: "success", value: "Request received. If an account with that email exists, you will receive a password reset link shortly.")
-                ]
-                return req.redirect(to: components.string ?? path.string)
+                do {
+                    try await req.views.handleResetPasswordRequestForm()
+                    return req.redirect(
+                        to: buildRedirectLocation(
+                            for: group + path,
+                            success: "If an account with that identifier exists, a password reset link has been sent."
+                        )
+                    )
+                } catch let error as AuthenticationError {
+                    return req.redirect(
+                        to: buildRedirectLocation(
+                            for: group + path,
+                            error: error.reason
+                        )
+                    )
+                } catch {
+                    return req.redirect(
+                        to: buildRedirectLocation(
+                            for: group + path,
+                            error: "An unexpected error occurred. Please try again."
+                        )
+                    )
+                }
             }
         }
     }
@@ -28,21 +45,24 @@ struct ViewsRouteCollection: RouteCollection {
 
 extension ViewsRouteCollection {
 
-//    @Sendable
-//    func renderPasswordResetRequestView(_ req: Request) async throws -> View {
-//        return try await req.views.renderResetPasswordRequestView()
-//    }
+    func buildRedirectLocation(
+        for path: [PathComponent],
+        params: [String: String?] = [:],
+        success: String? = nil,
+        error: String? = nil,
+    ) -> String {
+        var components = URLComponents()
+        components.path = "/\(path.string)"
+        components.queryItems = params.map { key, value in
+            URLQueryItem(name: key, value: value)
+        }
+        if let success {
+            components.queryItems?.append(URLQueryItem(name: "success", value: success))
+        }
+        if let error {
+            components.queryItems?.append(URLQueryItem(name: "error", value: error))
+        }
+        return components.string ?? "/\(path.string)"
+    }
 
-//    @Sendable
-//    func handlePasswordResetRequestSubmit(_ req: Request) async throws -> Response {
-//        guard let view = config.passwordResetRequest else {
-//            throw Abort(.notFound)
-//        }
-//        return req.redirect(
-//            to: buildFormURL(
-//                email: form.email,
-//                success: "Password reset successfully. You can now log in with your new password.",
-//            )
-//        )
-//    }
 }
