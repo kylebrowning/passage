@@ -23,24 +23,63 @@ struct IdentityRouteCollection: RouteCollection {
 
 extension IdentityRouteCollection {
 
-    fileprivate func register(_ req: Request) async throws -> HTTPStatus {
-        let register = try req.decodeContentAsFormOfType(req.contracts.registerForm)
+    fileprivate func register(_ req: Request) async throws -> Response {
+        do {
+            let form = try req.decodeContentAsFormOfType(req.contracts.registerForm)
+            try await req.identity.register(form: form)
 
-        try await req.identity.register(form: register)
+            guard req.isFormSubmission, req.isWaitingForHTML, let view = req.configuration.views.register else {
+                return try await HTTPStatus.ok.encodeResponse(for: req)
+            }
 
-        return .ok
+            return req.views.handleRegisterFormSuccess(
+                of: view,
+                at: routes.register.path,
+            )
+
+        } catch {
+            guard req.isFormSubmission, req.isWaitingForHTML, let view = req.configuration.views.register else {
+                throw error
+            }
+
+            return req.views.handleRegisterFormFailure(
+                of: view,
+                at: routes.register.path,
+                with: error
+            )
+        }
     }
-
 }
 
 // MARK: - Login
 
 extension IdentityRouteCollection {
 
-    fileprivate func login(_ req: Request) async throws -> AuthUser {
-        let login = try req.decodeContentAsFormOfType(req.contracts.loginForm)
+    fileprivate func login(_ req: Request) async throws -> Response {
+        do {
+            let form = try req.decodeContentAsFormOfType(req.contracts.loginForm)
+            let user = try await req.identity.login(form: form)
 
-        return try await req.identity.login(form: login)
+            guard req.isFormSubmission, req.isWaitingForHTML, let view = req.configuration.views.login else {
+                return try await user.encodeResponse(for: req)
+            }
+
+            return req.views.handleLoginFormSuccess(
+                of: view,
+                at: routes.login.path,
+            )
+        } catch {
+            guard req.isFormSubmission, req.isWaitingForHTML, let view = req.configuration.views.login else {
+                throw error
+            }
+
+            return req.views.handleLoginFormFailure(
+                of: view,
+                at: routes.login.path,
+                with: error
+            )
+        }
+
     }
 
 }

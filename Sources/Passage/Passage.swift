@@ -35,7 +35,7 @@ public struct Passage: Sendable {
             ))
             // Register email password reset routes if delivery is provided
             try app.register(collection: EmailRestorationRouteCollection(
-                config: configuration.restoration.email,
+                routes: configuration.restoration.email.routes,
                 groupPath: configuration.routes.group
             ))
             // Register password reset web form if enabled
@@ -55,7 +55,7 @@ public struct Passage: Sendable {
             ))
             // Register phone password reset routes if delivery is provided
             try app.register(collection: PhoneRestorationRouteCollection(
-                config: configuration.restoration.phone,
+                routes: configuration.restoration.phone.routes,
                 groupPath: configuration.routes.group
             ))
         }
@@ -65,6 +65,8 @@ public struct Passage: Sendable {
             try Views.registerLeafTempleates(on: app)
             try app.register(collection: ViewsRouteCollection(
                 config: configuration.views,
+                routes: configuration.routes,
+                restoration: configuration.restoration,
                 group: configuration.routes.group
             ))
         }

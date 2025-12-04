@@ -2,15 +2,15 @@ import Vapor
 
 struct PhoneRestorationRouteCollection: RouteCollection {
 
-    let config: Passage.Configuration.Restoration.Phone
+    let routes: Passage.Configuration.Restoration.Phone.Routes
     let groupPath: [PathComponent]
 
     func boot(routes builder: any RoutesBuilder) throws {
         let grouped = groupPath.isEmpty ? builder : builder.grouped(groupPath)
 
-        grouped.post(config.routes.request.path, use: request)
-        grouped.post(config.routes.verify.path, use: verify)
-        grouped.post(config.routes.resend.path, use: resend)
+        grouped.post(routes.request.path, use: request)
+        grouped.post(routes.verify.path, use: verify)
+        grouped.post(routes.resend.path, use: resend)
     }
 
 }

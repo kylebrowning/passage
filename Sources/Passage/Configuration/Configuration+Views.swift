@@ -10,17 +10,34 @@ public extension Passage.Configuration {
             var name: String { get }
             var style: Passage.Views.Style { get }
             var theme: Passage.Views.Theme { get }
+            var redirect: Redirect { get }
         }
 
+        public struct Redirect: Sendable {
+            let onSuccess: String?
+            let onFailure: String?
+
+            public init(
+                onSuccess: String? = nil,
+                onFailure: String? = nil,
+            ) {
+                self.onSuccess = onSuccess
+                self.onFailure = onFailure
+            }
+        }
+
+        let register: RegisterView?
         let login: LoginView?
         let passwordResetRequest: PasswordResetRequestView?
         let passwordResetConfirm: PasswordResetConfirmView?
 
         public init(
+            register: RegisterView? = nil,
             login: LoginView? = nil,
             passwordResetRequest: PasswordResetRequestView? = nil,
             passwordResetConfirm: PasswordResetConfirmView? = nil,
         ) {
+            self.register = register
             self.login = login
             self.passwordResetRequest = passwordResetRequest
             self.passwordResetConfirm = passwordResetConfirm
@@ -34,7 +51,10 @@ public extension Passage.Configuration {
 extension Passage.Configuration.Views {
 
     var enabled: Bool {
-        return login != nil || passwordResetRequest != nil || passwordResetConfirm != nil
+        return login != nil ||
+        register != nil ||
+        passwordResetRequest != nil ||
+        passwordResetConfirm != nil
     }
 }
 
@@ -52,28 +72,47 @@ extension Passage.Configuration.Views.View {
 public extension Passage.Configuration.Views {
 
     struct LoginView: Sendable, View {
-        public struct Route: Sendable {
-            let path: [PathComponent]
-            public init(path: PathComponent...) {
-                self.path = path
-            }
-        }
-
         let name: String = "login"
-        let route: Route
         let style: Passage.Views.Style
         let theme: Passage.Views.Theme
+        let redirect: Redirect
         let identifier: Identifier.Kind
 
         public init(
-            route: Route = Route(path: "login"),
             style: Passage.Views.Style,
             theme: Passage.Views.Theme,
+            redirect: Redirect = .init(),
             identifier: Identifier.Kind,
         ) {
-            self.route = route
             self.style = style
             self.theme = theme
+            self.redirect = redirect
+            self.identifier = identifier
+        }
+    }
+
+}
+
+// MARK: - Register View
+
+public extension Passage.Configuration.Views {
+
+    struct RegisterView: Sendable, View {
+        let name: String = "register"
+        let style: Passage.Views.Style
+        let theme: Passage.Views.Theme
+        let redirect: Redirect
+        let identifier: Identifier.Kind
+
+        public init(
+            style: Passage.Views.Style,
+            theme: Passage.Views.Theme,
+            redirect: Redirect = .init(),
+            identifier: Identifier.Kind,
+        ) {
+            self.style = style
+            self.theme = theme
+            self.redirect = redirect
             self.identifier = identifier
         }
     }
@@ -85,51 +124,36 @@ public extension Passage.Configuration.Views {
 public extension Passage.Configuration.Views {
 
     struct PasswordResetRequestView: Sendable, View {
-        public struct Route: Sendable {
-            let path: [PathComponent]
-            public init(path: PathComponent...) {
-                self.path = path
-            }
-        }
-
         let name: String = "password-reset-request"
-        let route: Route
         let style: Passage.Views.Style
         let theme: Passage.Views.Theme
+        let redirect: Redirect
 
         public init(
-            route: Route = Route(path: "password", "reset", "request"),
             style: Passage.Views.Style,
             theme: Passage.Views.Theme,
+            redirect: Redirect = .init(),
         ) {
-            self.route = route
             self.style = style
             self.theme = theme
+            self.redirect = redirect
         }
     }
 
     struct PasswordResetConfirmView: Sendable, View {
-
-        public struct Route: Sendable {
-            let path: [PathComponent]
-            public init(path: PathComponent...) {
-                self.path = path
-            }
-        }
-
         let name: String = "password-reset-confirm"
-        let route: Route
         let style: Passage.Views.Style
         let theme: Passage.Views.Theme
+        let redirect: Redirect
 
         public init(
-            route: Route = Route(path: "password", "reset", "confirm"),
             style: Passage.Views.Style,
             theme: Passage.Views.Theme,
+            redirect: Redirect = .init(),
         ) {
-            self.route = route
             self.style = style
             self.theme = theme
+            self.redirect = redirect
         }
     }
 

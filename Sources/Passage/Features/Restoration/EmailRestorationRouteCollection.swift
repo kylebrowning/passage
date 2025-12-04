@@ -2,15 +2,15 @@ import Vapor
 
 struct EmailRestorationRouteCollection: RouteCollection {
 
-    let config: Passage.Configuration.Restoration.Email
+    let routes: Passage.Configuration.Restoration.Email.Routes
     let groupPath: [PathComponent]
 
     func boot(routes builder: any RoutesBuilder) throws {
         let grouped = groupPath.isEmpty ? builder : builder.grouped(groupPath)
 
-        grouped.post(config.routes.request.path, use: request)
-        grouped.post(config.routes.verify.path, use: verify)
-        grouped.post(config.routes.resend.path, use: resend)
+        grouped.post(routes.request.path, use: request)
+        grouped.post(routes.verify.path, use: verify)
+        grouped.post(routes.resend.path, use: resend)
     }
 
 }
@@ -19,11 +19,31 @@ struct EmailRestorationRouteCollection: RouteCollection {
 
 extension EmailRestorationRouteCollection {
 
-    func request(_ req: Request) async throws -> HTTPStatus {
-        let form = try req.decodeContentAsFormOfType(req.contracts.emailPasswordResetRequestForm)
-        let identifier = Identifier(kind: .email, value: form.email)
-        try await req.restoration.requestReset(for: identifier)
-        return .ok
+    func request(_ req: Request) async throws -> Response {
+        do {
+            let form = try req.decodeContentAsFormOfType(req.contracts.emailPasswordResetRequestForm)
+            let identifier = Identifier(kind: .email, value: form.email)
+            try await req.restoration.requestReset(for: identifier)
+
+            guard req.isFormSubmission, req.isWaitingForHTML, let view = req.configuration.views.passwordResetRequest else {
+                return try await HTTPStatus.ok.encodeResponse(for: req)
+            }
+
+            return req.views.handleResetPasswordRequestFormSuccess(
+                of: view,
+                at: routes.request.path,
+            )
+        } catch {
+            guard req.isFormSubmission, req.isWaitingForHTML, let view = req.configuration.views.passwordResetRequest else {
+                throw error
+            }
+
+            return req.views.handleResetPasswordRequestFormFailure(
+                of: view,
+                at: routes.request.path,
+                with: error
+            )
+        }
     }
 
 }
@@ -32,20 +52,39 @@ extension EmailRestorationRouteCollection {
 
 extension EmailRestorationRouteCollection {
 
-    func verify(_ req: Request) async throws -> HTTPStatus {
-        let form = try req.decodeContentAsFormOfType(req.contracts.emailPasswordResetVerifyForm)
-        let identifier = Identifier(kind: .email, value: form.email)
+    func verify(_ req: Request) async throws -> Response {
+        do {
+            let form = try req.decodeContentAsFormOfType(req.contracts.emailPasswordResetVerifyForm)
+            let identifier = Identifier(kind: .email, value: form.email)
 
-        // Hash the new password
-        let passwordHash = try Bcrypt.hash(form.newPassword)
+            // Hash the new password
+            let passwordHash = try Bcrypt.hash(form.newPassword)
 
-        try await req.restoration.verifyAndResetPassword(
-            identifier: identifier,
-            code: form.code,
-            newPasswordHash: passwordHash
-        )
+            try await req.restoration.verifyAndResetPassword(
+                identifier: identifier,
+                code: form.code,
+                newPasswordHash: passwordHash
+            )
 
-        return .ok
+            guard req.isFormSubmission, req.isWaitingForHTML, let view = req.configuration.views.passwordResetConfirm else {
+                return try await HTTPStatus.ok.encodeResponse(for: req)
+            }
+
+            return req.views.handleResetPasswordConfirmFormSuccess(
+                of: view,
+                at: routes.verify.path,
+            )
+        } catch {
+            guard req.isFormSubmission, req.isWaitingForHTML, let view = req.configuration.views.passwordResetConfirm else {
+                throw error
+            }
+
+            return req.views.handleResetPasswordConfirmFormFailure(
+                of: view,
+                at: routes.verify.path,
+                with: error
+            )
+        }
     }
 
 }
