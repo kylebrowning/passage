@@ -4,6 +4,7 @@ public extension Passage {
 
     struct Contracts: Sendable {
         let loginForm: any LoginForm.Type
+        let logoutForm: any LogoutForm.Type
         let registerForm: any RegisterForm.Type
         let refreshTokenForm: any RefreshTokenForm.Type
         let emailVerificationForm: any EmailVerificationForm.Type
@@ -17,6 +18,7 @@ public extension Passage {
 
         public init(
             loginForm: (any LoginForm.Type)? = nil,
+            logoutForm: (any LogoutForm.Type)? = nil,
             registerForm: (any RegisterForm.Type)? = nil,
             refreshTokenForm: (any RefreshTokenForm.Type)? = nil,
             emailVerificationForm: (any EmailVerificationForm.Type)? = nil,
@@ -30,6 +32,7 @@ public extension Passage {
 
         ) {
             self.loginForm = loginForm ?? DefaultLoginForm.self
+            self.logoutForm = logoutForm ?? DefaultLogoutForm.self
             self.registerForm = registerForm ?? DefaultRegisterForm.self
             self.refreshTokenForm = refreshTokenForm ?? DefaultRefreshTokenForm.self
             self.emailVerificationForm = emailVerificationForm ?? DefaultEmailVerificationForm.self

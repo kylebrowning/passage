@@ -1,6 +1,6 @@
 import Vapor
 
-public protocol RegisterForm: Content, Validatable {
+public protocol RegisterForm: Form {
     var email: String? { get }
     var phone: String? { get }
     var username: String? { get }

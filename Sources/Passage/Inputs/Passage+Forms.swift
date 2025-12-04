@@ -62,6 +62,15 @@ extension Passage {
     }
 }
 
+// MARK: - Logout Form Default Implementation
+
+extension Passage {
+    struct DefaultLogoutForm: LogoutForm {
+        static func validations(_ validations: inout Validations) {
+        }
+    }
+}
+
 // MARK: - Verification Default Forms Default Implementation
 
 extension Passage {

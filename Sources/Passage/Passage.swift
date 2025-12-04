@@ -25,7 +25,7 @@ public struct Passage: Sendable {
 
         try await app.jwt.keys.add(jwksJSON: configuration.jwt.jwks.json)
 
-        try app.register(collection: PassageRouteCollection(routes: configuration.routes))
+        try app.register(collection: IdentityRouteCollection(routes: configuration.routes))
 
         if let _ = services.emailDelivery {
             // Register email verification routes if delivery is provided
