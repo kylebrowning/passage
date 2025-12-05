@@ -130,6 +130,11 @@ public extension Passage.OnlyForTest.InMemoryStore {
         private var identifierIndex: [String: String] = [:] // identifier -> userId
 
         public func create(with credential: Credential) async throws {
+            // Check for duplicate identifier
+            if identifierIndex[credential.identifier.value] != nil {
+                throw credential.identifier.errorWhenIdentifierAlreadyRegistered
+            }
+
             let userId = UUID().uuidString
             let user = Passage.OnlyForTest.InMemoryUser(
                 id: userId,

@@ -48,10 +48,7 @@ extension Passage.Verification.EmailRouteCollection {
 
     func verify(_ req: Request) async throws -> HTTPStatus {
         let accessToken = try await req.jwt.verify(as: AccessToken.self)
-        let formType = req.contracts.emailVerificationForm
-        try formType.validate(content: req)
-        let form = try req.query.decode(formType.self)
-        try form.validate()
+        let form = try req.decodeQueryAsFormOfType(req.contracts.emailVerificationForm)
 
         guard let user = try await req.store.users.find(byId: accessToken.subject.value) else {
             throw AuthenticationError.userNotFound

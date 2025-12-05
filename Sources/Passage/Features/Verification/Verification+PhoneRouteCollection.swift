@@ -48,10 +48,8 @@ extension Passage.Verification.PhoneRouteCollection {
 
     func verify(_ req: Request) async throws -> HTTPStatus {
         let accessToken = try await req.jwt.verify(as: AccessToken.self)
-        let formType = req.contracts.phoneVerificationForm
-        try formType.validate(content: req)
-        let form = try req.content.decode(formType.self)
-        try form.validate()
+
+        let form = try req.decodeContentAsFormOfType(req.contracts.phoneVerificationForm)
 
         guard let user = try await req.store.users.find(byId: accessToken.subject.value) else {
             throw AuthenticationError.userNotFound
