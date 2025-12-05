@@ -21,7 +21,7 @@ extension Passage.Views {
         guard let resourcePath = Bundle.module.resourcePath else {
             throw PassageError.unexpected(message: "Could not locate resource path for Passage module.")
         }
-        let sources = try app.leaf.sources
+        let sources = app.leaf.sources
         try sources.register(
             source: "passage",
             using: NIOLeafFiles(
@@ -31,7 +31,7 @@ extension Passage.Views {
                 viewDirectory: "\(resourcePath)/Views"
             )
         )
-        try app.leaf.sources = sources
+        app.leaf.sources = sources
     }
 
 }

@@ -10,19 +10,19 @@ struct ViewsRouteCollection: RouteCollection {
     func boot(routes builder: any RoutesBuilder) throws {
         let grouped = group.isEmpty ? builder : builder.grouped(group)
 
-        if let view = config.register {
+        if let _ = config.register {
             grouped.get(routes.register.path) { req in
                 try await req.views.renderRegisterView()
             }
         }
 
-        if let view = config.login {
+        if let _ = config.login {
             grouped.get(routes.login.path) { req in
                 try await req.views.renderLoginView()
             }
         }
 
-        if let view = config.passwordResetRequest {
+        if let _ = config.passwordResetRequest {
             grouped.get(restoration.email.routes.request.path) { req in
                 try await req.views.renderResetPasswordRequestView(
                     for: .email
@@ -35,7 +35,7 @@ struct ViewsRouteCollection: RouteCollection {
             }
         }
 
-        if let view = config.passwordResetConfirm {
+        if let _ = config.passwordResetConfirm {
             grouped.get(restoration.email.routes.verify.path) { req in
                 try await req.views.renderResetPasswordConfirmView(
                     for: .email

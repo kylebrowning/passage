@@ -101,7 +101,7 @@ extension IdentityRouteCollection {
 extension IdentityRouteCollection {
 
     fileprivate func logout(_ req: Request) async throws -> HTTPStatus {
-        let _ = try await req.decodeContentAsFormOfType(req.contracts.logoutForm)
+        let _ = try req.decodeContentAsFormOfType(req.contracts.logoutForm)
 
         guard let user = req.auth.get(req.store.users.userType) else {
             return .ok
