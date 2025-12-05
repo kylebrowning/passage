@@ -1,0 +1,652 @@
+import Testing
+import Vapor
+import VaporTesting
+import JWTKit
+@testable import Passage
+@testable import PassageOnlyForTest
+
+@Suite("Password Reset Integration Tests", .tags(.integration, .resetPassword))
+struct PasswordResetIntegrationTests {
+
+    // MARK: - Helpers
+
+    /// Helper class to capture sent emails and SMS
+    final class CapturedMessages: @unchecked Sendable {
+        var emails: [Passage.OnlyForTest.MockEmailDelivery.EphemeralEmail] = []
+        var sms: [Passage.OnlyForTest.MockPhoneDelivery.EphemeralSMS] = []
+    }
+
+    // MARK: - Configuration Helpers
+
+    /// Configures a test Vapor application with Passage
+    @Sendable private func configure(_ app: Application) async throws {
+        try await configureWithCapture(app, captured: nil, codeExpiration: 600)
+    }
+
+    /// Configures a test Vapor application with Passage and optional message capture
+    @Sendable private func configureWithCapture(
+        _ app: Application,
+        captured: CapturedMessages? = nil,
+        codeExpiration: TimeInterval = 600
+    ) async throws {
+        // Add HMAC key directly for testing
+        await app.jwt.keys.add(
+            hmac: HMACKey(from: "test-secret-key-for-jwt-signing"),
+            digestAlgorithm: .sha256,
+            kid: JWKIdentifier(string: "test-key")
+        )
+
+        // Configure Passage with test services
+        let store = Passage.OnlyForTest.InMemoryStore()
+
+        let emailCallback: (@Sendable (Passage.OnlyForTest.MockEmailDelivery.EphemeralEmail) -> Void)? =
+            captured != nil ? { @Sendable in captured!.emails.append($0) } : nil
+        let phoneCallback: (@Sendable (Passage.OnlyForTest.MockPhoneDelivery.EphemeralSMS) -> Void)? =
+            captured != nil ? { @Sendable in captured!.sms.append($0) } : nil
+
+        let emailDelivery = Passage.OnlyForTest.MockEmailDelivery(callback: emailCallback)
+        let phoneDelivery = Passage.OnlyForTest.MockPhoneDelivery(callback: phoneCallback)
+
+        let services = Passage.Services(
+            store: store,
+            random: DefaultRandomGenerator(),
+            emailDelivery: emailDelivery,
+            phoneDelivery: phoneDelivery,
+            federatedLogin: nil
+        )
+
+        let emptyJwks = """
+        {"keys":[]}
+        """
+
+        let configuration = try Passage.Configuration(
+            origin: URL(string: "http://localhost:8080")!,
+            routes: .init(),
+            tokens: .init(
+                issuer: "test-issuer",
+                accessToken: .init(timeToLive: 3600),
+                refreshToken: .init(timeToLive: 86400)
+            ),
+            jwt: .init(jwks: .init(json: emptyJwks)),
+            verification: .init(
+                email: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
+                phone: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
+                useQueues: false
+            ),
+            restoration: .init(
+                email: .init(codeLength: 6, codeExpiration: codeExpiration, maxAttempts: 3),
+                phone: .init(codeLength: 6, codeExpiration: codeExpiration, maxAttempts: 3),
+                useQueues: false
+            )
+        )
+
+        try await app.passage.configure(
+            services: services,
+            configuration: configuration
+        )
+    }
+
+    /// Creates a test user directly in the store
+    @Sendable private func createTestUser(
+        app: Application,
+        email: String? = nil,
+        phone: String? = nil,
+        username: String? = nil,
+        password: String = "oldPassword123",
+        isEmailVerified: Bool = false,
+        isPhoneVerified: Bool = false
+    ) async throws {
+        let store = app.passage.storage.services.store
+        let passwordHash = try await app.password.async.hash(password)
+
+        let credential: Credential
+        if let email = email {
+            credential = .email(email: email, passwordHash: passwordHash)
+        } else if let phone = phone {
+            credential = .phone(phone: phone, passwordHash: passwordHash)
+        } else if let username = username {
+            credential = .username(username: username, passwordHash: passwordHash)
+        } else {
+            fatalError("Must provide at least one identifier")
+        }
+
+        try await store.users.create(with: credential)
+
+        // Update verification status if needed
+        if isEmailVerified || isPhoneVerified {
+            let user = try await store.users.find(byCredential: credential)
+            #expect(user != nil)
+
+            if isEmailVerified {
+                try await store.users.markEmailVerified(for: user!)
+            }
+            if isPhoneVerified {
+                try await store.users.markPhoneVerified(for: user!)
+            }
+        }
+    }
+
+    // MARK: - Helper Methods
+
+
+
+    // MARK: - Email Password Reset Tests
+
+    @Test("Request password reset via email sends reset code")
+    func requestPasswordResetEmail() async throws {
+        let captured = CapturedMessages()
+
+        try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
+            let email = "user@example.com"
+            try await createTestUser(app: app, email: email)
+
+            try await app.testing().test(.POST, "/auth/password/reset/email", beforeRequest: { req in
+                try req.content.encode(["email": email])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+                #expect(captured.emails.count == 1)
+
+                let sentEmail = try #require(captured.emails.first)
+                #expect(sentEmail.to == email)
+                #expect(sentEmail.passwordResetCode != nil)
+                #expect(sentEmail.passwordResetURL != nil)
+            })
+        }
+    }
+
+    @Test("Request password reset via phone sends SMS code")
+    func requestPasswordResetPhone() async throws {
+        let captured = CapturedMessages()
+
+        try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
+            let phone = "+1234567890"
+            try await createTestUser(app: app, phone: phone)
+
+            try await app.testing().test(.POST, "/auth/password/reset/phone", beforeRequest: { req in
+                try req.content.encode(["phone": phone])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+                #expect(captured.sms.count == 1)
+
+                let sentSMS = try #require(captured.sms.first)
+                #expect(sentSMS.to == phone)
+                #expect(sentSMS.code != nil)
+            })
+        }
+    }
+
+    @Test("Successful password reset via email with valid code")
+    func successfulPasswordResetViaEmail() async throws {
+        let captured = CapturedMessages()
+        let email = "user@example.com"
+        let oldPassword = "oldPassword123"
+        let newPassword = "newPassword456"
+
+        try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
+            try await createTestUser(app: app, email: email, password: oldPassword, isEmailVerified: true)
+
+            // Step 1: Request password reset code
+            try await app.testing().test(.POST, "/auth/password/reset/email", beforeRequest: { req in
+                try req.content.encode(["email": email])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            let resetCode = try #require(captured.emails.first?.passwordResetCode)
+
+            // Step 2: Verify code and reset password
+            try await app.testing().test(.POST, "/auth/password/reset/email/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "code": resetCode,
+                    "newPassword": newPassword
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            // Step 3: Verify old password no longer works
+            try await app.testing().test(.POST, "/auth/login", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "password": oldPassword
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .unauthorized)
+            })
+
+            // Step 4: Verify new password works
+            try await app.testing().test(.POST, "/auth/login", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "password": newPassword
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+        }
+    }
+
+    @Test("Successful password reset via phone with valid code")
+    func successfulPasswordResetViaPhone() async throws {
+        let captured = CapturedMessages()
+        let phone = "+1234567890"
+        let oldPassword = "oldPassword123"
+        let newPassword = "newPassword456"
+
+        try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
+            try await createTestUser(app: app, phone: phone, password: oldPassword, isPhoneVerified: true)
+
+            // Step 1: Request password reset code
+            try await app.testing().test(.POST, "/auth/password/reset/phone", beforeRequest: { req in
+                try req.content.encode(["phone": phone])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            let resetCode = try #require(captured.sms.first?.code)
+
+            // Step 2: Verify code and reset password
+            try await app.testing().test(.POST, "/auth/password/reset/phone/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "phone": phone,
+                    "code": resetCode,
+                    "newPassword": newPassword
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            // Step 3: Verify old password no longer works
+            try await app.testing().test(.POST, "/auth/login", beforeRequest: { req in
+                try req.content.encode([
+                    "phone": phone,
+                    "password": oldPassword
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .unauthorized)
+            })
+
+            // Step 4: Verify new password works
+            try await app.testing().test(.POST, "/auth/login", beforeRequest: { req in
+                try req.content.encode([
+                    "phone": phone,
+                    "password": newPassword
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+        }
+    }
+
+    @Test("Password reset fails with invalid code")
+    func passwordResetFailsWithInvalidCode() async throws {
+        let captured = CapturedMessages()
+
+        try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
+            let email = "user@example.com"
+            try await createTestUser(app: app, email: email)
+
+            // Request reset code
+            try await app.testing().test(.POST, "/auth/password/reset/email", beforeRequest: { req in
+                try req.content.encode(["email": email])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            // Try to verify with wrong code
+            try await app.testing().test(.POST, "/auth/password/reset/email/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "code": "wrongcode",
+                    "newPassword": "newPassword456"
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .unauthorized)
+            })
+        }
+    }
+
+    @Test("Password reset fails with expired code")
+    func passwordResetFailsWithExpiredCode() async throws {
+        let captured = CapturedMessages()
+
+        try await withApp(configure: { app in
+            // Set code to expire immediately
+            try await configureWithCapture(app, captured: captured, codeExpiration: -1)
+        }) { app in
+            let email = "user@example.com"
+            try await createTestUser(app: app, email: email)
+
+            // Request reset code
+            try await app.testing().test(.POST, "/auth/password/reset/email", beforeRequest: { req in
+                try req.content.encode(["email": email])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            let resetCode = try #require(captured.emails.first?.passwordResetCode)
+
+            // Try to verify with expired code
+            try await app.testing().test(.POST, "/auth/password/reset/email/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "code": resetCode,
+                    "newPassword": "newPassword456"
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .gone)
+            })
+        }
+    }
+
+    @Test("Password reset request fails for non-existent email")
+    func passwordResetFailsForNonExistentEmail() async throws {
+        try await withApp(configure: configure) { app in
+            try await app.testing().test(.POST, "/auth/password/reset/email", beforeRequest: { req in
+                try req.content.encode(["email": "nonexistent@example.com"])
+            }, afterResponse: { res in
+                #expect(res.status == .notFound)
+            })
+        }
+    }
+
+    @Test("Password reset request fails for non-existent phone")
+    func passwordResetFailsForNonExistentPhone() async throws {
+        try await withApp(configure: configure) { app in
+            try await app.testing().test(.POST, "/auth/password/reset/phone", beforeRequest: { req in
+                try req.content.encode(["phone": "+9999999999"])
+            }, afterResponse: { res in
+                #expect(res.status == .notFound)
+            })
+        }
+    }
+
+    @Test("Email password reset link URL contains code and email")
+    func emailResetLinkContainsCodeAndEmail() async throws {
+        let captured = CapturedMessages()
+
+        try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
+            let email = "user@example.com"
+            try await createTestUser(app: app, email: email)
+
+            try await app.testing().test(.POST, "/auth/password/reset/email", beforeRequest: { req in
+                try req.content.encode(["email": email])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            let sentEmail = try #require(captured.emails.first)
+            let resetURL = try #require(sentEmail.passwordResetURL)
+            let resetCode = try #require(sentEmail.passwordResetCode)
+
+            // Verify URL structure
+            #expect(resetURL.absoluteString.contains("password/reset/email/verify"))
+            #expect(resetURL.absoluteString.contains("code=\(resetCode)"))
+            #expect(resetURL.absoluteString.contains("email="))
+        }
+    }
+
+    @Test("Resend email password reset code invalidates old code")
+    func resendEmailResetCodeInvalidatesOldCode() async throws {
+        let captured = CapturedMessages()
+
+        try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
+            let email = "user@example.com"
+            try await createTestUser(app: app, email: email)
+
+            // Request initial reset code
+            try await app.testing().test(.POST, "/auth/password/reset/email", beforeRequest: { req in
+                try req.content.encode(["email": email])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            let firstCode = try #require(captured.emails.first?.passwordResetCode)
+
+            // Resend reset code
+            try await app.testing().test(.POST, "/auth/password/reset/email/resend", beforeRequest: { req in
+                try req.content.encode(["email": email])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            #expect(captured.emails.count == 2)
+            let secondCode = try #require(captured.emails.last?.passwordResetCode)
+            #expect(firstCode != secondCode)
+
+            // Try to use old code - should fail
+            try await app.testing().test(.POST, "/auth/password/reset/email/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "code": firstCode,
+                    "newPassword": "newPassword456"
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .unauthorized)
+            })
+
+            // Use new code - should succeed
+            try await app.testing().test(.POST, "/auth/password/reset/email/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "code": secondCode,
+                    "newPassword": "newPassword456"
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+        }
+    }
+
+    @Test("Resend phone password reset code invalidates old code")
+    func resendPhoneResetCodeInvalidatesOldCode() async throws {
+        let captured = CapturedMessages()
+
+        try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
+            let phone = "+1234567890"
+            try await createTestUser(app: app, phone: phone)
+
+            // Request initial reset code
+            try await app.testing().test(.POST, "/auth/password/reset/phone", beforeRequest: { req in
+                try req.content.encode(["phone": phone])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            let firstCode = try #require(captured.sms.first?.code)
+
+            // Resend reset code
+            try await app.testing().test(.POST, "/auth/password/reset/phone/resend", beforeRequest: { req in
+                try req.content.encode(["phone": phone])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            #expect(captured.sms.count == 2)
+            let secondCode = try #require(captured.sms.last?.code)
+            #expect(firstCode != secondCode)
+
+            // Try to use old code - should fail
+            try await app.testing().test(.POST, "/auth/password/reset/phone/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "phone": phone,
+                    "code": firstCode,
+                    "newPassword": "newPassword456"
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .unauthorized)
+            })
+
+            // Use new code - should succeed
+            try await app.testing().test(.POST, "/auth/password/reset/phone/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "phone": phone,
+                    "code": secondCode,
+                    "newPassword": "newPassword456"
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+        }
+    }
+
+    @Test("Password reset invalidates code after successful use")
+    func passwordResetInvalidatesCodeAfterUse() async throws {
+        let captured = CapturedMessages()
+
+        try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
+            let email = "user@example.com"
+            try await createTestUser(app: app, email: email)
+
+            // Request reset code
+            try await app.testing().test(.POST, "/auth/password/reset/email", beforeRequest: { req in
+                try req.content.encode(["email": email])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            let resetCode = try #require(captured.emails.first?.passwordResetCode)
+
+            // Use code to reset password
+            try await app.testing().test(.POST, "/auth/password/reset/email/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "code": resetCode,
+                    "newPassword": "newPassword456"
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            // Try to reuse the same code - should fail
+            try await app.testing().test(.POST, "/auth/password/reset/email/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "code": resetCode,
+                    "newPassword": "anotherPassword789"
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .unauthorized)
+            })
+        }
+    }
+
+    @Test("Password reset request fails with invalid email format")
+    func passwordResetFailsWithInvalidEmailFormat() async throws {
+        try await withApp(configure: configure) { app in
+            try await app.testing().test(.POST, "/auth/password/reset/email", beforeRequest: { req in
+                try req.content.encode(["email": "invalid-email"])
+            }, afterResponse: { res in
+                #expect(res.status == .badRequest)
+            })
+        }
+    }
+
+    @Test("Password reset verify fails with missing fields")
+    func passwordResetVerifyFailsWithMissingFields() async throws {
+        try await withApp(configure: configure) { app in
+            // Missing newPassword
+            try await app.testing().test(.POST, "/auth/password/reset/email/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "email": "user@example.com",
+                    "code": "123456"
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .badRequest)
+            })
+
+            // Missing code
+            try await app.testing().test(.POST, "/auth/password/reset/email/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "email": "user@example.com",
+                    "newPassword": "newPassword123"
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .badRequest)
+            })
+        }
+    }
+
+    @Test("Password reset verify fails with short password")
+    func passwordResetVerifyFailsWithShortPassword() async throws {
+        let captured = CapturedMessages()
+
+        try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
+            let email = "user@example.com"
+            try await createTestUser(app: app, email: email)
+
+            // Request reset code
+            try await app.testing().test(.POST, "/auth/password/reset/email", beforeRequest: { req in
+                try req.content.encode(["email": email])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            let resetCode = try #require(captured.emails.first?.passwordResetCode)
+
+            // Try to reset with password that's too short (< 6 characters)
+            try await app.testing().test(.POST, "/auth/password/reset/email/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "code": resetCode,
+                    "newPassword": "short"
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .badRequest)
+            })
+        }
+    }
+
+    @Test("Password reset revokes all refresh tokens")
+    func passwordResetRevokesAllRefreshTokens() async throws {
+        let captured = CapturedMessages()
+        let email = "user@example.com"
+        let oldPassword = "oldPassword123"
+        let newPassword = "newPassword456"
+        var refreshToken = ""
+
+        try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
+            try await createTestUser(app: app, email: email, password: oldPassword, isEmailVerified: true)
+
+            // Step 1: Login to get a refresh token
+            try await app.testing().test(.POST, "/auth/login", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "password": oldPassword
+                ])
+            }, afterResponse: { res async throws in
+                #expect(res.status == .ok)
+                let authUser = try res.content.decode(AuthUser.self)
+                refreshToken = authUser.refreshToken
+            })
+
+            // Step 2: Request password reset code
+            try await app.testing().test(.POST, "/auth/password/reset/email", beforeRequest: { req in
+                try req.content.encode(["email": email])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            let resetCode = try #require(captured.emails.first?.passwordResetCode)
+
+            // Step 3: Reset password (should revoke all refresh tokens)
+            try await app.testing().test(.POST, "/auth/password/reset/email/verify", beforeRequest: { req in
+                try req.content.encode([
+                    "email": email,
+                    "code": resetCode,
+                    "newPassword": newPassword
+                ])
+            }, afterResponse: { res in
+                #expect(res.status == .ok)
+            })
+
+            // Step 4: Try to use old refresh token - should fail
+            try await app.testing().test(.POST, "/auth/refresh-token", beforeRequest: { req in
+                try req.content.encode(["refreshToken": refreshToken])
+            }, afterResponse: { res in
+                #expect(res.status == .unauthorized)
+            })
+        }
+    }
+}
