@@ -311,7 +311,7 @@ struct PhoneRestorationRouteCollectionTests {
         )
 
         let emailRoutes = Passage.Configuration.Restoration.Email.Routes()
-        let emailCollection = EmailRestorationRouteCollection(
+        let emailCollection = Passage.Restoration.EmailRouteCollection(
             routes: emailRoutes,
             group: ["email"]
         )
