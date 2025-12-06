@@ -2,6 +2,7 @@ import Testing
 import Vapor
 import VaporTesting
 import JWTKit
+import XCTQueues
 @testable import Passage
 @testable import PassageOnlyForTest
 
@@ -35,6 +36,8 @@ struct PasswordResetIntegrationTests {
             digestAlgorithm: .sha256,
             kid: JWKIdentifier(string: "test-key")
         )
+
+        app.queues.use(.asyncTest)
 
         // Configure Passage with test services
         let store = Passage.OnlyForTest.InMemoryStore()
@@ -71,12 +74,12 @@ struct PasswordResetIntegrationTests {
             verification: .init(
                 email: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
                 phone: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
-                useQueues: false
+                useQueues: true
             ),
             restoration: .init(
                 email: .init(codeLength: 6, codeExpiration: codeExpiration, maxAttempts: 3),
                 phone: .init(codeLength: 6, codeExpiration: codeExpiration, maxAttempts: 3),
-                useQueues: false
+                useQueues: true
             )
         )
 
@@ -144,13 +147,16 @@ struct PasswordResetIntegrationTests {
                 try req.content.encode(["email": email])
             }, afterResponse: { res in
                 #expect(res.status == .ok)
-                #expect(captured.emails.count == 1)
-
-                let sentEmail = try #require(captured.emails.first)
-                #expect(sentEmail.to == email)
-                #expect(sentEmail.passwordResetCode != nil)
-                #expect(sentEmail.passwordResetURL != nil)
             })
+
+            try await app.queues.queue.worker.run()
+
+            #expect(captured.emails.count == 1)
+
+            let sentEmail = try #require(captured.emails.first)
+            #expect(sentEmail.to == email)
+            #expect(sentEmail.passwordResetCode != nil)
+            #expect(sentEmail.passwordResetURL != nil)
         }
     }
 
@@ -166,12 +172,15 @@ struct PasswordResetIntegrationTests {
                 try req.content.encode(["phone": phone])
             }, afterResponse: { res in
                 #expect(res.status == .ok)
-                #expect(captured.sms.count == 1)
-
-                let sentSMS = try #require(captured.sms.first)
-                #expect(sentSMS.to == phone)
-                #expect(sentSMS.code != nil)
             })
+
+            try await app.queues.queue.worker.run()
+
+            #expect(captured.sms.count == 1)
+
+            let sentSMS = try #require(captured.sms.first)
+            #expect(sentSMS.to == phone)
+            #expect(sentSMS.code != nil)
         }
     }
 
@@ -191,6 +200,8 @@ struct PasswordResetIntegrationTests {
             }, afterResponse: { res in
                 #expect(res.status == .ok)
             })
+
+            try await app.queues.queue.worker.run()
 
             let resetCode = try #require(captured.emails.first?.passwordResetCode)
 
@@ -243,6 +254,8 @@ struct PasswordResetIntegrationTests {
             }, afterResponse: { res in
                 #expect(res.status == .ok)
             })
+
+            try await app.queues.queue.worker.run()
 
             let resetCode = try #require(captured.sms.first?.code)
 
@@ -325,6 +338,9 @@ struct PasswordResetIntegrationTests {
                 #expect(res.status == .ok)
             })
 
+            // Run queue worker to process password reset email
+            try await app.queues.queue.worker.run()
+
             let resetCode = try #require(captured.emails.first?.passwordResetCode)
 
             // Try to verify with expired code
@@ -376,6 +392,9 @@ struct PasswordResetIntegrationTests {
                 #expect(res.status == .ok)
             })
 
+            // Run queue worker to process password reset email
+            try await app.queues.queue.worker.run()
+
             let sentEmail = try #require(captured.emails.first)
             let resetURL = try #require(sentEmail.passwordResetURL)
             let resetCode = try #require(sentEmail.passwordResetCode)
@@ -402,6 +421,9 @@ struct PasswordResetIntegrationTests {
                 #expect(res.status == .ok)
             })
 
+            // Run queue worker to process first reset email
+            try await app.queues.queue.worker.run()
+
             let firstCode = try #require(captured.emails.first?.passwordResetCode)
 
             // Resend reset code
@@ -410,6 +432,9 @@ struct PasswordResetIntegrationTests {
             }, afterResponse: { res in
                 #expect(res.status == .ok)
             })
+
+            // Run queue worker to process resend email
+            try await app.queues.queue.worker.run()
 
             #expect(captured.emails.count == 2)
             let secondCode = try #require(captured.emails.last?.passwordResetCode)
@@ -454,6 +479,9 @@ struct PasswordResetIntegrationTests {
                 #expect(res.status == .ok)
             })
 
+            // Run queue worker to process first reset SMS
+            try await app.queues.queue.worker.run()
+
             let firstCode = try #require(captured.sms.first?.code)
 
             // Resend reset code
@@ -462,6 +490,9 @@ struct PasswordResetIntegrationTests {
             }, afterResponse: { res in
                 #expect(res.status == .ok)
             })
+
+            // Run queue worker to process resend SMS
+            try await app.queues.queue.worker.run()
 
             #expect(captured.sms.count == 2)
             let secondCode = try #require(captured.sms.last?.code)
@@ -505,6 +536,9 @@ struct PasswordResetIntegrationTests {
             }, afterResponse: { res in
                 #expect(res.status == .ok)
             })
+
+            // Run queue worker to process password reset email
+            try await app.queues.queue.worker.run()
 
             let resetCode = try #require(captured.emails.first?.passwordResetCode)
 
@@ -583,6 +617,9 @@ struct PasswordResetIntegrationTests {
                 #expect(res.status == .ok)
             })
 
+            // Run queue worker to process password reset email
+            try await app.queues.queue.worker.run()
+
             let resetCode = try #require(captured.emails.first?.passwordResetCode)
 
             // Try to reset with password that's too short (< 6 characters)
@@ -627,6 +664,9 @@ struct PasswordResetIntegrationTests {
             }, afterResponse: { res in
                 #expect(res.status == .ok)
             })
+
+            // Run queue worker to process password reset email
+            try await app.queues.queue.worker.run()
 
             let resetCode = try #require(captured.emails.first?.passwordResetCode)
 

@@ -2,6 +2,7 @@ import Testing
 import Vapor
 import VaporTesting
 import JWTKit
+import XCTQueues
 @testable import Passage
 @testable import PassageOnlyForTest
 
@@ -34,6 +35,8 @@ struct RegisterIntegrationTests {
             digestAlgorithm: .sha256,
             kid: JWKIdentifier(string: "test-key")
         )
+
+        app.queues.use(.asyncTest)
 
         // Configure Passage with test services
         let store = Passage.OnlyForTest.InMemoryStore()
@@ -75,7 +78,7 @@ struct RegisterIntegrationTests {
                     codeExpiration: 600,
                     maxAttempts: 5
                 ),
-                useQueues: false
+                useQueues: true
             ),
             restoration: .init(
                 email: .init(
@@ -88,7 +91,7 @@ struct RegisterIntegrationTests {
                     codeExpiration: 600,
                     maxAttempts: 5
                 ),
-                useQueues: false
+                useQueues: true
             )
         )
 
@@ -124,13 +127,16 @@ struct RegisterIntegrationTests {
                 #expect(user != nil)
                 #expect(user?.email == "newuser@example.com")
                 #expect(user?.isEmailVerified == false)
-
-                // Verify verification email was sent
-                #expect(captured.emails.count == 1)
-                #expect(captured.emails.first?.to == "newuser@example.com")
-                #expect(captured.emails.first?.type == .verification)
-                #expect(captured.emails.first?.verificationCode != nil)
             })
+
+            // Run queue worker to process verification email job
+            try await app.queues.queue.worker.run()
+
+            // Verify verification email was sent
+            #expect(captured.emails.count == 1)
+            #expect(captured.emails.first?.to == "newuser@example.com")
+            #expect(captured.emails.first?.type == .verification)
+            #expect(captured.emails.first?.verificationCode != nil)
         }
     }
 
@@ -158,13 +164,16 @@ struct RegisterIntegrationTests {
                 #expect(user != nil)
                 #expect(user?.phone == "+1234567890")
                 #expect(user?.isPhoneVerified == false)
-
-                // Verify SMS was sent
-                #expect(captured.sms.count == 1)
-                #expect(captured.sms.first?.to == "+1234567890")
-                #expect(captured.sms.first?.type == .verification)
-                #expect(captured.sms.first?.code != nil)
             })
+
+            // Run queue worker to process verification SMS job
+            try await app.queues.queue.worker.run()
+
+            // Verify SMS was sent
+            #expect(captured.sms.count == 1)
+            #expect(captured.sms.first?.to == "+1234567890")
+            #expect(captured.sms.first?.type == .verification)
+            #expect(captured.sms.first?.code != nil)
         }
     }
 
@@ -412,7 +421,6 @@ struct RegisterIntegrationTests {
                 ])
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
-                #expect(captured.emails.count == 1)
 
                 // Get user to create access token for verification
                 let store = app.passage.storage.services.store
@@ -431,6 +439,12 @@ struct RegisterIntegrationTests {
                 )
                 accessToken = try await app.jwt.keys.sign(token)
             })
+
+            // Run queue worker to process verification email job
+            try await app.queues.queue.worker.run()
+
+            // Verify verification email was sent
+            #expect(captured.emails.count == 1)
 
             // Verify email with code
             try await app.testing().test(
@@ -531,6 +545,9 @@ struct RegisterIntegrationTests {
                 accessToken = try await app.jwt.keys.sign(token)
             })
 
+            // Run queue worker to process verification email job
+            try await app.queues.queue.worker.run()
+
             // Verify email
             try await app.testing().test(
                 .GET,
@@ -577,7 +594,6 @@ struct RegisterIntegrationTests {
                 ])
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
-                #expect(captured.sms.count == 1)
 
                 // Get user to create access token
                 let store = app.passage.storage.services.store
@@ -595,6 +611,8 @@ struct RegisterIntegrationTests {
                 )
                 accessToken = try await app.jwt.keys.sign(token)
             })
+
+            try await app.queues.queue.worker.run()
 
             // Verify phone with POST request
             try await app.testing().test(
@@ -696,6 +714,9 @@ struct RegisterIntegrationTests {
                 accessToken = try await app.jwt.keys.sign(token)
             })
 
+            // Run queue worker to process verification SMS job
+            try await app.queues.queue.worker.run()
+
             // Verify phone
             try await app.testing().test(
                 .POST,
@@ -743,7 +764,6 @@ struct RegisterIntegrationTests {
                 ])
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
-                #expect(captured.emails.count == 1)
 
                 // Get access token
                 let store = app.passage.storage.services.store
@@ -760,6 +780,10 @@ struct RegisterIntegrationTests {
                 accessToken = try await app.jwt.keys.sign(token)
             })
 
+            // Run queue worker to process first verification email
+            try await app.queues.queue.worker.run()
+            #expect(captured.emails.count == 1)
+
             // Resend verification code
             try await app.testing().test(
                 .POST,
@@ -769,10 +793,13 @@ struct RegisterIntegrationTests {
                 },
                 afterResponse: { res async in
                     #expect(res.status == .ok)
-                    #expect(captured.emails.count == 2)
-                    #expect(captured.emails.last?.verificationCode != nil)
                 }
             )
+
+            // Run queue worker to process resend email
+            try await app.queues.queue.worker.run()
+            #expect(captured.emails.count == 2)
+            #expect(captured.emails.last?.verificationCode != nil)
         }
     }
 
@@ -792,7 +819,6 @@ struct RegisterIntegrationTests {
                 ])
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
-                #expect(captured.sms.count == 1)
 
                 // Get access token
                 let store = app.passage.storage.services.store
@@ -809,6 +835,10 @@ struct RegisterIntegrationTests {
                 accessToken = try await app.jwt.keys.sign(token)
             })
 
+            // Run queue worker to process first verification SMS
+            try await app.queues.queue.worker.run()
+            #expect(captured.sms.count == 1)
+
             // Resend verification code
             try await app.testing().test(
                 .POST,
@@ -818,10 +848,13 @@ struct RegisterIntegrationTests {
                 },
                 afterResponse: { res async in
                     #expect(res.status == .ok)
-                    #expect(captured.sms.count == 2)
-                    #expect(captured.sms.last?.code != nil)
                 }
             )
+
+            // Run queue worker to process resend SMS
+            try await app.queues.queue.worker.run()
+            #expect(captured.sms.count == 2)
+            #expect(captured.sms.last?.code != nil)
         }
     }
 }

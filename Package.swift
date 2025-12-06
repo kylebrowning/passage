@@ -42,6 +42,7 @@ let package = Package(
                 "Passage",
                 "PassageOnlyForTest",
                 .product(name: "VaporTesting", package: "vapor"),
+                .product(name: "XCTQueues", package: "queues"),
             ]
         )
     ]
