@@ -38,13 +38,13 @@ public struct Passage: Sendable {
                 routes: configuration.restoration.email.routes,
                 group: configuration.routes.group
             ))
-            // Register password reset web form if enabled
-//            if configuration.restoration.email.webForm.enabled {
-//                try app.register(collection: PasswordResetFormRouteCollection(
-//                    config: configuration,
-//                    groupPath: configuration.routes.group
-//                ))
-//            }
+            // Register email magic link routes for passwordless authentication
+            if let emailMagicLink = configuration.passwordless.emailMagicLink {
+                try app.register(collection: Passwordless.MagicLinkEmailRouteCollection(
+                    routes: emailMagicLink.routes,
+                    group: configuration.routes.group
+                ))
+            }
         }
 
         if let _ = services.phoneDelivery {
@@ -81,6 +81,11 @@ public struct Passage: Sendable {
         if configuration.restoration.useQueues {
             app.queues.add(Restoration.SendEmailPasswordResetCodeJob())
             app.queues.add(Restoration.SendPhonePasswordResetCodeJob())
+        }
+
+        // Register passwordless jobs if queues are enabled
+        if configuration.passwordless.emailMagicLink?.useQueues == true {
+            app.queues.add(Passwordless.SendEmailMagicLinkJob())
         }
 
         try oauth.register(config: configuration)
