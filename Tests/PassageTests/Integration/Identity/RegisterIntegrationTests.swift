@@ -410,8 +410,6 @@ struct RegisterIntegrationTests {
         let captured = CapturedMessages()
 
         try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
-            var accessToken = ""
-
             // Register user
             try await app.testing().test(.POST, "auth/register", beforeRequest: { req in
                 try req.content.encode([
@@ -422,22 +420,12 @@ struct RegisterIntegrationTests {
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
 
-                // Get user to create access token for verification
+                // Verify user was created
                 let store = app.passage.storage.services.store
                 let user = try await store.users.find(
                     byIdentifier: Identifier(kind: .email, value: "verify@example.com")
                 )
                 #expect(user != nil)
-
-                // Create access token for verification request
-                let token = AccessToken(
-                    userId: try user!.requiredIdAsString,
-                    expiresAt: .now.addingTimeInterval(3600),
-                    issuer: "test-issuer",
-                    audience: nil,
-                    scope: nil
-                )
-                accessToken = try await app.jwt.keys.sign(token)
             })
 
             // Run queue worker to process verification email job
@@ -446,13 +434,10 @@ struct RegisterIntegrationTests {
             // Verify verification email was sent
             #expect(captured.emails.count == 1)
 
-            // Verify email with code
+            // Verify email with code (no auth required)
             try await app.testing().test(
                 .GET,
-                "auth/email/verify?code=\(captured.emails.first!.verificationCode!)",
-                beforeRequest: { req in
-                    req.headers.bearerAuthorization = BearerAuthorization(token: accessToken)
-                },
+                "auth/email/verify?code=\(captured.emails.first!.verificationCode!)&email=\(captured.emails.first!.to)",
                 afterResponse: { res async throws in
                     #expect(res.status == .ok)
 
@@ -470,8 +455,6 @@ struct RegisterIntegrationTests {
     @Test("Email verification fails with invalid code")
     func emailVerificationFailsWithInvalidCode() async throws {
         try await withApp(configure: configure) { app in
-            var accessToken = ""
-
             // Register user
             try await app.testing().test(.POST, "auth/register", beforeRequest: { req in
                 try req.content.encode([
@@ -481,31 +464,12 @@ struct RegisterIntegrationTests {
                 ])
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
-
-                // Get user to create access token
-                let store = app.passage.storage.services.store
-                let user = try await store.users.find(
-                    byIdentifier: Identifier(kind: .email, value: "verify@example.com")
-                )
-                #expect(user != nil)
-
-                let token = AccessToken(
-                    userId: try user!.requiredIdAsString,
-                    expiresAt: .now.addingTimeInterval(3600),
-                    issuer: "test-issuer",
-                    audience: nil,
-                    scope: nil
-                )
-                accessToken = try await app.jwt.keys.sign(token)
             })
 
-            // Attempt verification with wrong code
+            // Attempt verification with wrong code (no auth required)
             try await app.testing().test(
                 .GET,
-                "auth/email/verify?code=WRONGCODE",
-                beforeRequest: { req in
-                    req.headers.bearerAuthorization = BearerAuthorization(token: accessToken)
-                },
+                "auth/email/verify?code=WRONGCODE&email=verify@example.com",
                 afterResponse: { res async in
                     #expect(res.status == .unauthorized)
                 }
@@ -518,8 +482,6 @@ struct RegisterIntegrationTests {
         let captured = CapturedMessages()
 
         try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
-            var accessToken = ""
-
             // Register user
             try await app.testing().test(.POST, "auth/register", beforeRequest: { req in
                 try req.content.encode([
@@ -529,32 +491,15 @@ struct RegisterIntegrationTests {
                 ])
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
-
-                // Get access token
-                let store = app.passage.storage.services.store
-                let user = try await store.users.find(
-                    byIdentifier: Identifier(kind: .email, value: "verified@example.com")
-                )
-                let token = AccessToken(
-                    userId: try user!.requiredIdAsString,
-                    expiresAt: .now.addingTimeInterval(3600),
-                    issuer: "test-issuer",
-                    audience: nil,
-                    scope: nil
-                )
-                accessToken = try await app.jwt.keys.sign(token)
             })
 
             // Run queue worker to process verification email job
             try await app.queues.queue.worker.run()
 
-            // Verify email
+            // Verify email (no auth required)
             try await app.testing().test(
                 .GET,
-                "auth/email/verify?code=\(captured.emails.first!.verificationCode!)",
-                beforeRequest: { req in
-                    req.headers.bearerAuthorization = BearerAuthorization(token: accessToken)
-                },
+                "auth/email/verify?code=\(captured.emails.first!.verificationCode!)&email=verified@example.com",
                 afterResponse: { res async in
                     #expect(res.status == .ok)
                 }
@@ -583,8 +528,6 @@ struct RegisterIntegrationTests {
         let captured = CapturedMessages()
 
         try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
-            var accessToken = ""
-
             // Register user
             try await app.testing().test(.POST, "auth/register", beforeRequest: { req in
                 try req.content.encode([
@@ -595,33 +538,22 @@ struct RegisterIntegrationTests {
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
 
-                // Get user to create access token
+                // Verify user was created
                 let store = app.passage.storage.services.store
                 let user = try await store.users.find(
                     byIdentifier: Identifier(kind: .phone, value: "+1234567890")
                 )
                 #expect(user != nil)
-
-                let token = AccessToken(
-                    userId: try user!.requiredIdAsString,
-                    expiresAt: .now.addingTimeInterval(3600),
-                    issuer: "test-issuer",
-                    audience: nil,
-                    scope: nil
-                )
-                accessToken = try await app.jwt.keys.sign(token)
             })
 
             try await app.queues.queue.worker.run()
 
-            // Verify phone with POST request
+            // Verify phone with POST request (no auth required, uses query params)
+            // Note: + must be encoded as %2B in query strings (urlQueryAllowed doesn't encode it)
+            let phone = "+1234567890".addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
             try await app.testing().test(
                 .POST,
-                "auth/phone/verify",
-                beforeRequest: { req in
-                    req.headers.bearerAuthorization = BearerAuthorization(token: accessToken)
-                    try req.content.encode(["code": captured.sms.first!.code!])
-                },
+                "auth/phone/verify?code=\(captured.sms.first!.code!)&phone=\(phone)",
                 afterResponse: { res async throws in
                     #expect(res.status == .ok)
 
@@ -639,8 +571,6 @@ struct RegisterIntegrationTests {
     @Test("Phone verification fails with invalid code")
     func phoneVerificationFailsWithInvalidCode() async throws {
         try await withApp(configure: configure) { app in
-            var accessToken = ""
-
             // Register user
             try await app.testing().test(.POST, "auth/register", beforeRequest: { req in
                 try req.content.encode([
@@ -650,31 +580,14 @@ struct RegisterIntegrationTests {
                 ])
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
-
-                // Get user to create access token
-                let store = app.passage.storage.services.store
-                let user = try await store.users.find(
-                    byIdentifier: Identifier(kind: .phone, value: "+1234567890")
-                )
-
-                let token = AccessToken(
-                    userId: try user!.requiredIdAsString,
-                    expiresAt: .now.addingTimeInterval(3600),
-                    issuer: "test-issuer",
-                    audience: nil,
-                    scope: nil
-                )
-                accessToken = try await app.jwt.keys.sign(token)
             })
 
-            // Attempt verification with wrong code
+            // Attempt verification with wrong code (no auth required, uses query params)
+            // Note: + must be encoded as %2B in query strings (urlQueryAllowed doesn't encode it)
+            let phone = "+1234567890".addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
             try await app.testing().test(
                 .POST,
-                "auth/phone/verify",
-                beforeRequest: { req in
-                    req.headers.bearerAuthorization = BearerAuthorization(token: accessToken)
-                    try req.content.encode(["code": "WRONGCODE"])
-                },
+                "auth/phone/verify?code=WRONGCODE&phone=\(phone)",
                 afterResponse: { res async in
                     #expect(res.status == .unauthorized)
                 }
@@ -687,8 +600,6 @@ struct RegisterIntegrationTests {
         let captured = CapturedMessages()
 
         try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
-            var accessToken = ""
-
             // Register user
             try await app.testing().test(.POST, "auth/register", beforeRequest: { req in
                 try req.content.encode([
@@ -698,33 +609,17 @@ struct RegisterIntegrationTests {
                 ])
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
-
-                // Get access token
-                let store = app.passage.storage.services.store
-                let user = try await store.users.find(
-                    byIdentifier: Identifier(kind: .phone, value: "+1234567890")
-                )
-                let token = AccessToken(
-                    userId: try user!.requiredIdAsString,
-                    expiresAt: .now.addingTimeInterval(3600),
-                    issuer: "test-issuer",
-                    audience: nil,
-                    scope: nil
-                )
-                accessToken = try await app.jwt.keys.sign(token)
             })
 
             // Run queue worker to process verification SMS job
             try await app.queues.queue.worker.run()
 
-            // Verify phone
+            // Verify phone (no auth required, uses query params)
+            // Note: + must be encoded as %2B in query strings (urlQueryAllowed doesn't encode it)
+            let phone = "+1234567890".addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
             try await app.testing().test(
                 .POST,
-                "auth/phone/verify",
-                beforeRequest: { req in
-                    req.headers.bearerAuthorization = BearerAuthorization(token: accessToken)
-                    try req.content.encode(["code": captured.sms.first!.code!])
-                },
+                "auth/phone/verify?code=\(captured.sms.first!.code!)&phone=\(phone)",
                 afterResponse: { res async in
                     #expect(res.status == .ok)
                 }
@@ -753,8 +648,6 @@ struct RegisterIntegrationTests {
         let captured = CapturedMessages()
 
         try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
-            var accessToken = ""
-
             // Register user (sends first code)
             try await app.testing().test(.POST, "auth/register", beforeRequest: { req in
                 try req.content.encode([
@@ -764,32 +657,18 @@ struct RegisterIntegrationTests {
                 ])
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
-
-                // Get access token
-                let store = app.passage.storage.services.store
-                let user = try await store.users.find(
-                    byIdentifier: Identifier(kind: .email, value: "resend@example.com")
-                )
-                let token = AccessToken(
-                    userId: try user!.requiredIdAsString,
-                    expiresAt: .now.addingTimeInterval(3600),
-                    issuer: "test-issuer",
-                    audience: nil,
-                    scope: nil
-                )
-                accessToken = try await app.jwt.keys.sign(token)
             })
 
             // Run queue worker to process first verification email
             try await app.queues.queue.worker.run()
             #expect(captured.emails.count == 1)
 
-            // Resend verification code
+            // Resend verification code (no auth required, email in body)
             try await app.testing().test(
                 .POST,
                 "auth/email/resend",
                 beforeRequest: { req in
-                    req.headers.bearerAuthorization = BearerAuthorization(token: accessToken)
+                    try req.content.encode(["email": "resend@example.com"])
                 },
                 afterResponse: { res async in
                     #expect(res.status == .ok)
@@ -808,8 +687,6 @@ struct RegisterIntegrationTests {
         let captured = CapturedMessages()
 
         try await withApp(configure: { app in try await configureWithCapture(app, captured: captured) }) { app in
-            var accessToken = ""
-
             // Register user (sends first code)
             try await app.testing().test(.POST, "auth/register", beforeRequest: { req in
                 try req.content.encode([
@@ -819,32 +696,18 @@ struct RegisterIntegrationTests {
                 ])
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)
-
-                // Get access token
-                let store = app.passage.storage.services.store
-                let user = try await store.users.find(
-                    byIdentifier: Identifier(kind: .phone, value: "+1234567890")
-                )
-                let token = AccessToken(
-                    userId: try user!.requiredIdAsString,
-                    expiresAt: .now.addingTimeInterval(3600),
-                    issuer: "test-issuer",
-                    audience: nil,
-                    scope: nil
-                )
-                accessToken = try await app.jwt.keys.sign(token)
             })
 
             // Run queue worker to process first verification SMS
             try await app.queues.queue.worker.run()
             #expect(captured.sms.count == 1)
 
-            // Resend verification code
+            // Resend verification code (no auth required, phone in body)
             try await app.testing().test(
                 .POST,
                 "auth/phone/resend",
                 beforeRequest: { req in
-                    req.headers.bearerAuthorization = BearerAuthorization(token: accessToken)
+                    try req.content.encode(["phone": "+1234567890"])
                 },
                 afterResponse: { res async in
                     #expect(res.status == .ok)

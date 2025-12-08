@@ -71,29 +71,47 @@ extension Passage {
     }
 }
 
-// MARK: - Verification Default Forms Default Implementation
+// MARK: - Verification Forms Default Implementation
 
 extension Passage {
-
-    struct DefaultEmailVerificationForm: EmailVerificationForm {
+    struct DefaultEmailVerificationRequestForm: EmailVerificationRequestForm {
         static func validations(_ validations: inout Validations) {
-            validations.add("code", as: String.self, is: .count(6...20))
+            validations.add("email", as: String.self, is: .email)
         }
 
-        let code: String
+        let email: String
     }
 
-    struct DefaultPhoneVerificationForm: PhoneVerificationForm {
+    struct DefaultEmailVerificationConfirmForm: EmailVerificationConfirmForm {
+        static func validations(_ validations: inout Validations) {
+            validations.add("code", as: String.self, is: .count(6...20))
+            validations.add("email", as: String.self, is: .email)
+        }
+
+        let code: String
+        let email: String
+    }
+
+    struct DefaultPhoneVerificationRequestForm: PhoneVerificationRequestForm {
+        static func validations(_ validations: inout Validations) {
+            validations.add("phone", as: String.self, is: .count(6...))
+        }
+
+        let phone: String
+    }
+
+    struct DefaultPhoneVerificationConfirmForm: PhoneVerificationConfirmForm {
         static func validations(_ validations: inout Validations) {
             validations.add("code", as: String.self, is: .count(6...20))
         }
 
         let code: String
+        let phone: String
     }
 
 }
 
-// MARK: - Restoration Default Forms Default Implementation
+// MARK: - Restoration Forms Default Implementation
 
 extension Passage {
 

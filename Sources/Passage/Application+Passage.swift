@@ -53,46 +53,13 @@ extension Passage {
     }
 }
 
+
 // MARK: - Application Support
 
 public extension Application {
 
     var passage: Passage {
-        Passage(app: self)
-    }
-
-}
-
-// MARK: - Request Support
-
-extension Request {
-
-    var contracts: Passage.Contracts {
-        application.passage.contracts
-    }
-
-    var store: any Passage.Store {
-        application.passage.store
-    }
-
-    var emailDelivery: (any Passage.EmailDelivery)? {
-        application.passage.emailDelivery
-    }
-
-    var phoneDelivery: (any Passage.PhoneDelivery)? {
-        application.passage.phoneDelivery
-    }
-
-    var configuration: Passage.Configuration {
-        application.passage.configuration
-    }
-
-    var tokens: Passage.Configuration.Tokens {
-        configuration.tokens
-    }
-
-    var random: any Passage.RandomGenerator {
-        application.passage.random
+        .init(app: self)
     }
 
 }

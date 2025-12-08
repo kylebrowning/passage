@@ -171,6 +171,9 @@ extension Passage.Identity {
 extension Passage.Identity {
 
     func logout(user: any User) async throws {
+        defer {
+            request.auth.logout(request.store.users.userType)
+        }
         try await store.tokens.revokeRefreshToken(for: user)
     }
 
@@ -180,12 +183,19 @@ extension Passage.Identity {
 
 extension Passage.Identity {
 
-    func currentUser(accessToken: AccessToken) async throws -> AuthUser.User {
+    func user(for accessToken: AccessToken) async throws -> any User {
         let userId = accessToken.subject.value
 
         guard let user = try await store.users.find(byId: userId) else {
             throw AuthenticationError.userNotFound
         }
+
+        return user
+    }
+
+    func currentUser(accessToken: AccessToken) async throws -> AuthUser.User {
+
+        let user = try await user(for: accessToken)
 
         return .init(
             id: try user.requiredIdAsString,

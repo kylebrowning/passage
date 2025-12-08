@@ -1,17 +1,31 @@
 import Vapor
 
-public protocol VerificationForm: Form {
+// MARK: - Verification Forms
+
+public protocol VerificationRequestForm: Form {
+    // No common fields yet
+}
+
+public protocol VerificationConfirmForm: Form {
     var code: String { get }
 }
 
-// MARK: - Phone Verification Form
+// MARK: - Phone Verification Forms
 
-public protocol PhoneVerificationForm: VerificationForm {
-
+public protocol PhoneVerificationRequestForm: Form {
+    var phone: String { get }
 }
 
-// MARK: - Email Verification Form
+public protocol PhoneVerificationConfirmForm: VerificationConfirmForm {
+    var phone: String { get }
+}
 
-public protocol EmailVerificationForm: VerificationForm {
+// MARK: - Email Verification Forms
 
+public protocol EmailVerificationRequestForm: Form {
+    var email: String { get }
+}
+
+public protocol EmailVerificationConfirmForm: VerificationConfirmForm {
+    var email: String { get }
 }

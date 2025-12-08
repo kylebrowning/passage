@@ -11,6 +11,24 @@ public struct Identifier: Codable, Sendable, Equatable {
 
 }
 
+// MARK: Convenience Initializers
+
+public extension Identifier {
+
+    static func email(_ email: String) -> Identifier {
+        return Identifier(kind: .email, value: email)
+    }
+
+    static func phone(_ phone: String) -> Identifier {
+        return Identifier(kind: .phone, value: phone)
+    }
+
+    static func username(_ username: String) -> Identifier {
+        return Identifier(kind: .username, value: username)
+    }
+
+}
+
 // MARK: Error Support
 
 public extension Identifier {

@@ -570,7 +570,7 @@ struct PasswordlessIntegrationTests {
             })
 
             // Step 3: Use access token to access protected resource
-            try await app.testing().test(.GET, "/auth/me", beforeRequest: { req in
+            try await app.testing().test(.GET, "/me", beforeRequest: { req in
                 req.headers.bearerAuthorization = BearerAuthorization(token: accessToken)
             }, afterResponse: { res async throws in
                 #expect(res.status == .ok)

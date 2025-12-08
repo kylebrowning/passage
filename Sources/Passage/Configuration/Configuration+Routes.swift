@@ -1,4 +1,4 @@
-import Vapor
+    import Vapor
 
 public extension Passage.Configuration {
     struct Routes: Sendable {
@@ -37,8 +37,10 @@ public extension Passage.Configuration {
         public struct CurrentUser: Sendable {
             public static let `default` = CurrentUser(path: "me")
             let path: [PathComponent]
-            public init(path: PathComponent...) {
+            let shouldBypassGroup: Bool
+            public init(path: PathComponent..., shouldBypassGroup: Bool = true) {
                 self.path = path
+                self.shouldBypassGroup = shouldBypassGroup
             }
         }
 
