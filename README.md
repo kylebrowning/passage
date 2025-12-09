@@ -8,7 +8,7 @@ A comprehensive identity management and authentication framework for Vapor appli
 
 - 🔐 **User Registration & Login** - Complete authentication flow with secure password hashing
 - 📧 **Email Authentication** - Email-based identifier with verification codes
-- 📱 **Phone Authentication** - Phone number identifier with SMS verification
+- 📱 **Phone Authentication** - Phone number identifier with SMS verification (requires custom implementation of `PhoneDelivery` service)
 - 👤 **Username & Password** - Traditional username/password authentication
 - ✨ **Passwordless Magic Links** - Email-based passwordless authentication with one-click login
 - 🎫 **JWT Access Tokens** - Stateless authentication with JWKS support
@@ -28,74 +28,79 @@ Add Passage to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/rozd/passage.git", from: "0.1.0"),
+    // 🛂 Authentication and user management for Vapor.
+    .package(url: "https://github.com/rozd/passage", branch: "main"),
 ]
 ```
 
+Then add `"Passage"` to your target dependencies:
+
+```swift                
+.product(name: "Passage", package: "passage"),
+// Add this only if you want to use the in-memory store for testing
+.product(name: "PassageOnlyForTest", package: "passage"),
+```
+
 ### Basic Setup
+1. Set a custom working directory in your scheme and point it to your project folder.
+2. Create a JWKS file `keypair.jwks` and place it in the root of your project.
+3. Configure Passage in your `configure.swift`:
 
 ```swift
-import Passage
-import Vapor
+// enable Leaf templating to use Passage's built-in views
+app.views.use(.leaf)
 
-// 1. Implement the User protocol on your user model
-extension User: Passage.User {
-    var id: UUID? { get set }
-    var email: String? { get set }
-    var passwordHash: String? { get set }
-    // ... other required properties
-}
+// enable sessions middleware
+app.middleware.use(app.sessions.middleware)
 
-// 2. Configure Passage in configure.swift
-func configure(_ app: Application) async throws {
-    // Initialize your storage implementation (e.g., Fluent)
-    let store = DatabaseStore(db: app.db)
-
-    // Configure Passage
-    try await app.passage.configure(
-        services: .init(
-            store: store,
-            emailDelivery: MyEmailService(),  // Optional
-            phoneDelivery: MyPhoneService(),  // Optional
-            federatedLogin: MyOAuthService()  // Optional
+// Configure Passage with in-memory store for testing
+try await app.passage.configure(
+    services: .init(
+        store: Passage.OnlyForTest.InMemoryStore(),
+        emailDelivery: nil,
+        phoneDelivery: nil,
+    ),
+    configuration: .init(
+        origin: URL(string: "http://localhost:8080")!,
+        sessions: .init(enabled: true),
+        jwt: .init(
+            jwks: .file(path: "\(app.directory.workingDirectory)keypair.jwks")
         ),
-        configuration: .init(
-            origin: URL(string: "https://api.example.com")!,
-            routes: .init(group: "auth"),
-            jwt: .init(jwks: try .fileFromEnvironment())
+        views: .init(
+            register: .init(
+                style: .minimalism,
+                theme: .init(
+                    colors: .mintDark
+                ),
+                identifier: .username
+            ),
+            login: .init(
+                style: .minimalism,
+                theme: .init(
+                    colors: .mintDark
+                ),
+                identifier: .username
+            )
         )
     )
-}
+)
 ```
 
 ### Example Usage
+In your `routes.swift` file, protect routes using Passage's authenticators and guards:
 
 ```swift
-// Register a new user
-POST /auth/register
-{
-    "email": "user@example.com",
-    "password": "secure_password"
+app
+    .grouped(PassageSessionAuthenticator())
+    .grouped(PassageBearerAuthenticator())
+    .grouped(PassageGuard())
+    .get("protected") { req async throws -> String in
+        let user = try req.passage.user
+        return "Hello, \(String(describing: user.id))!"
 }
-
-// Login
-POST /auth/login
-{
-    "email": "user@example.com",
-    "password": "secure_password"
-}
-// Response: { "accessToken": "...", "refreshToken": "..." }
-
-// Refresh token
-POST /auth/refresh-token
-{
-    "refreshToken": "..."
-}
-
-// Get current user (requires JWT Bearer token)
-GET /auth/me
-Authorization: Bearer <accessToken>
 ```
+
+This adds two view endpoints at `http://localhost:8080/auth/register` and `http://localhost:8080/auth/login` for user registration and login, as well as a protected route at `http://localhost:8080/protected` that requires authentication.
 
 ## Customization
 
@@ -104,7 +109,7 @@ Passage is designed for flexibility through:
 - **Comprehensive Configuration** - Customize routes, token TTLs, JWT settings, verification flows, OAuth providers, and web forms
 - **Protocol-Based Services** - Implement your own storage, email delivery, phone delivery, or OAuth providers
 - **Extensible Forms** - Default form types can be replaced with custom implementations via contracts
-- **Template Customization** - Override email templates and Leaf views for complete UI control
+- **Stylable Default Views** - Default Leaf views with different styles and themes
 
 ## Services to Implement
 
@@ -113,6 +118,7 @@ Passage is designed for flexibility through:
 The `Store` protocol is the **only required service** you must provide. It handles all persistence for users, identifiers, tokens, and verification codes.
 
 **Recommended Implementation**: Use the [passage-fluent](https://github.com/rozd/passage-fluent) package which provides a complete Fluent-based storage implementation with migrations for PostgreSQL, MySQL, and SQLite.
+**Testing Implementation**: The `PassageOnlyForTest` module provides an in-memory store for testing purposes.
 
 ```swift
 import PassageFluent
@@ -150,7 +156,7 @@ let emailDelivery = MailgunEmailDelivery(
 )
 ```
 
-Or implement your own email provider by conforming to `Passage.EmailDelivery` protocol.
+Or implement your own email provider by conforming to the `Passage.EmailDelivery` protocol.
 
 ### PhoneDelivery (Optional)
 
@@ -240,77 +246,72 @@ try await app.passage.configure(
 
         // Configure token lifetimes
         tokens: .init(
-            accessTokenTTL: 900,        // 15 minutes
-            refreshTokenTTL: 2_592_000  // 30 days
+            issuer: "https://api.example.com",
+            accessToken: .init(
+                timeToLive: 900          // 15 minutes
+            ),
+            refreshToken: .init(
+                timeToLive: 2_592_000    // 30 days
+            ),
         ),
 
         // JWT/JWKS configuration
         jwt: .init(
             jwks: try .fileFromEnvironment(),  // Load from JWKS env var or file
-            issuer: "https://api.example.com",
-            audience: "https://api.example.com"
+        ),
+        
+        // Passwordless authentication (magic links)
+        passwordless: .init(
+            emailMagicLink: .email(
+                autoCreateUser: true,
+                requireSameBrowser: true
+            )
         ),
 
-        // Email verification settings
+        // Email/Phone verification settings; providing an `EmailDelivery` or `PhoneDelivery` service enables verification
         verification: .init(
             email: .init(
-                enabled: true,
-                codeTTL: 600,           // 10 minutes
-                useQueues: true         // Send via background jobs
+                codeLength: 6,
+                codeExpiration: 600,
+                maxAttempts: 5
             ),
             phone: .init(
-                enabled: true,
-                codeTTL: 600,
-                useQueues: true
+                                codeLength: 6,
+                codeExpiration: 600,
+                maxAttempts: 5
             ),
             useQueues: true  // Global queue setting
         ),
 
-        // Password reset settings
+        // Password reset settings; as with verification, providing `EmailDelivery` or `PhoneDelivery` enables password reset
         restoration: .init(
+            preferredDelivery: .email,
             email: .init(
-                enabled: true,
-                codeTTL: 3600,          // 1 hour
-                routes: .init(/* ... */)
-            ),
-            phone: .init(
-                enabled: true,
-                codeTTL: 3600,
-                routes: .init(/* ... */)
-            ),
+                codeLength: 6,
+                codeExpiration: 600,
+                maxAttempts: 5
+            )
             useQueues: true
         ),
 
-        // Passwordless authentication (magic links)
-        passwordless: .init(
-            emailMagicLink: .email(
-                linkExpiration: 900,    // 15 minutes
-                maxAttempts: 5,
-                autoCreateUser: true,   // Create user on first magic link verification
-                requireSameBrowser: false,
-                useQueues: true
-            )
-        ),
-
-        // OAuth provider configuration
+        // Federated Login configuration
         oauth: .init(
-            routes: .init(
-                group: "oauth",
-                callback: "callback"
-            ),
             providers: [
-                .google(clientID: "...", clientSecret: "..."),
-                .github(clientID: "...", clientSecret: "...")
-            ],
-            redirectLocation: "/dashboard"  // Where to redirect after OAuth
+                .github(
+                    credentials: .conventional
+                ),
+                .google(
+                    credentials: .conventional,
+                    scope: ["profile", "email"]
+                )
+            ]
         ),
 
         // Web form views (Leaf templates)
         views: .init(
-            enabled: true,
             register: .init(/* ... */),
             login: .init(/* ... */),
-            resetPassword: .init(/* ... */)
+            passwordResetRequest: .init(/* ... */)
         )
     )
 )
