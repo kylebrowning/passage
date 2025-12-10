@@ -2,7 +2,7 @@ import Testing
 import Vapor
 @testable import Passage
 
-@Suite("Identity Route Collection Tests")
+@Suite("Identity Route Collection Tests", .tags(.unit))
 struct IdentityRouteCollectionTests {
 
     // MARK: - Initialization Tests
@@ -15,7 +15,6 @@ struct IdentityRouteCollectionTests {
         #expect(collection.routes.register.path.count == 1)
         #expect(collection.routes.login.path.count == 1)
         #expect(collection.routes.logout.path.count == 1)
-        #expect(collection.routes.refreshToken.path.count == 1)
         #expect(collection.routes.currentUser.path.count == 1)
     }
 
@@ -25,7 +24,6 @@ struct IdentityRouteCollectionTests {
             register: .init(path: "signup"),
             login: .init(path: "signin"),
             logout: .init(path: "signout"),
-            refreshToken: .init(path: "token", "refresh"),
             currentUser: .init(path: "user", "profile")
         )
         let collection = Passage.Identity.RouteCollection(routes: routes)
@@ -34,7 +32,6 @@ struct IdentityRouteCollectionTests {
         #expect(collection.routes.register.path[0] == PathComponent.constant("signup"))
         #expect(collection.routes.login.path[0] == PathComponent.constant("signin"))
         #expect(collection.routes.logout.path[0] == PathComponent.constant("signout"))
-        #expect(collection.routes.refreshToken.path.count == 2)
         #expect(collection.routes.currentUser.path.count == 2)
     }
 
@@ -109,7 +106,6 @@ struct IdentityRouteCollectionTests {
         #expect(collection.routes.register.path == [PathComponent.constant("register")])
         #expect(collection.routes.login.path == [PathComponent.constant("login")])
         #expect(collection.routes.logout.path == [PathComponent.constant("logout")])
-        #expect(collection.routes.refreshToken.path == [PathComponent.constant("refresh-token")])
         #expect(collection.routes.currentUser.path == [PathComponent.constant("me")])
     }
 
@@ -119,7 +115,6 @@ struct IdentityRouteCollectionTests {
             register: .init(path: "users", "create"),
             login: .init(path: "auth", "login"),
             logout: .init(path: "auth", "logout"),
-            refreshToken: .init(path: "auth", "refresh"),
             currentUser: .init(path: "users", "me")
         )
         let collection = Passage.Identity.RouteCollection(routes: routes)
@@ -127,7 +122,6 @@ struct IdentityRouteCollectionTests {
         #expect(collection.routes.register.path.count == 2)
         #expect(collection.routes.login.path.count == 2)
         #expect(collection.routes.logout.path.count == 2)
-        #expect(collection.routes.refreshToken.path.count == 2)
         #expect(collection.routes.currentUser.path.count == 2)
     }
 

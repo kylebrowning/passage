@@ -7,6 +7,14 @@ extension Passage {
     }
 }
 
+// MARK: - Request Extension
+
+extension Request {
+    var identity: Passage.Identity {
+        Passage.Identity(request: self)
+    }
+}
+
 // MARK: - Service Accessors
 
 extension Passage.Identity {
@@ -32,15 +40,7 @@ extension Passage.Identity {
     }
 }
 
-// MARK: - Request Extension
-
-extension Request {
-    var identity: Passage.Identity {
-        Passage.Identity(request: self)
-    }
-}
-
-// MARK: - Registration
+// MARK: - Register
 
 extension Passage.Identity {
 
@@ -87,83 +87,7 @@ extension Passage.Identity {
 
         request.passage.login(user)
 
-        try await store.tokens.revokeRefreshToken(for: user)
-
-        let accessToken = AccessToken(
-            userId: try user.requiredIdAsString,
-            expiresAt: .now.addingTimeInterval(configuration.tokens.accessToken.timeToLive),
-            issuer: configuration.tokens.issuer,
-            audience: nil,
-            scope: nil
-        )
-
-        let opaqueToken = random.generateOpaqueToken()
-        try await store.tokens.createRefreshToken(
-            for: user,
-            tokenHash: random.hashOpaqueToken(token: opaqueToken),
-            expiresAt: .now.addingTimeInterval(configuration.tokens.refreshToken.timeToLive)
-        )
-
-        return AuthUser(
-            accessToken: try await request.jwt.sign(accessToken),
-            refreshToken: opaqueToken,
-            tokenType: "Bearer",
-            expiresIn: configuration.tokens.accessToken.timeToLive,
-            user: .init(
-                id: try user.requiredIdAsString,
-                email: user.email,
-                phone: user.phone
-            )
-        )
-    }
-
-}
-
-// MARK: - Token Refresh
-
-extension Passage.Identity {
-
-    func refreshToken(form: any RefreshTokenForm) async throws -> AuthUser {
-        let hash = random.hashOpaqueToken(token: form.refreshToken)
-
-        guard let refreshToken = try await store.tokens.find(refreshTokenHash: hash) else {
-            throw AuthenticationError.refreshTokenNotFound
-        }
-
-        guard refreshToken.isValid else {
-            try await store.tokens.revoke(refreshTokenFamilyStartingFrom: refreshToken)
-            throw AuthenticationError.invalidRefreshToken
-        }
-
-        let user = refreshToken.user
-
-        let opaqueToken = random.generateOpaqueToken()
-        try await store.tokens.createRefreshToken(
-            for: user,
-            tokenHash: random.hashOpaqueToken(token: opaqueToken),
-            expiresAt: .now.addingTimeInterval(configuration.tokens.refreshToken.timeToLive),
-            replacing: refreshToken
-        )
-
-        let accessToken = AccessToken(
-            userId: try user.requiredIdAsString,
-            expiresAt: .now.addingTimeInterval(configuration.tokens.accessToken.timeToLive),
-            issuer: configuration.tokens.issuer,
-            audience: nil,
-            scope: nil
-        )
-
-        return AuthUser(
-            accessToken: try await request.jwt.sign(accessToken),
-            refreshToken: opaqueToken,
-            tokenType: "Bearer",
-            expiresIn: configuration.tokens.accessToken.timeToLive,
-            user: .init(
-                id: try user.requiredIdAsString,
-                email: user.email,
-                phone: user.phone
-            )
-        )
+        return try await request.tokens.issue(for: user)
     }
 
 }
@@ -177,7 +101,7 @@ extension Passage.Identity {
             return
         }
         request.passage.logout()
-        try await store.tokens.revokeRefreshToken(for: user)
+        try await request.tokens.revoke(for: user)
     }
 
 }

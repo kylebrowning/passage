@@ -216,7 +216,7 @@ extension Passage.Restoration {
         try await store.restorationCodes.invalidatePasswordResetCodes(forEmail: email)
 
         // Revoke all refresh tokens (force re-login)
-        try await store.tokens.revokeRefreshToken(for: resetCode.user)
+        try await request.tokens.revoke(for: resetCode.user)
     }
 
     private func verifyPasswordResetCode(
@@ -249,7 +249,7 @@ extension Passage.Restoration {
         try await store.restorationCodes.invalidatePasswordResetCodes(forPhone: phone)
 
         // Revoke all refresh tokens (force re-login)
-        try await store.tokens.revokeRefreshToken(for: resetCode.user)
+        try await request.tokens.revoke(for: resetCode.user)
     }
 
     // MARK: - Dispatch Methods

@@ -1,7 +1,7 @@
 import Testing
 @testable import Passage
 
-@Suite("Identity Struct Tests")
+@Suite("Identity Struct Tests", .tags(.unit))
 struct IdentityStructTests {
 
     // MARK: - Structure Tests

@@ -34,10 +34,6 @@ extension Request {
         application.passage.configuration
     }
 
-    var tokens: Passage.Configuration.Tokens {
-        configuration.tokens
-    }
-
     var random: any Passage.RandomGenerator {
         application.passage.random
     }

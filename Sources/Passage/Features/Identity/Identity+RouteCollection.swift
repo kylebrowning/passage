@@ -14,29 +14,23 @@ extension Passage.Identity {
             let grouped = routes.group.isEmpty ? builder : builder.grouped(routes.group)
             grouped.post(routes.register.path, use: self.register)
             grouped.post(routes.login.path, use: self.login)
-            grouped.post(routes.refreshToken.path, use: self.refreshToken)
+
             grouped
                 .grouped(PassageSessionAuthenticator())
                 .grouped(PassageBearerAuthenticator())
                 .post(routes.logout.path, use: self.logout)
-            if routes.currentUser.shouldBypassGroup {
-                builder
-                    .grouped(PassageSessionAuthenticator())
-                    .grouped(PassageBearerAuthenticator())
-                    .get(routes.currentUser.path, use: self.currentUser)
-            } else {
-                grouped
-                    .grouped(PassageSessionAuthenticator())
-                    .grouped(PassageBearerAuthenticator())
-                    .get(routes.currentUser.path, use: self.currentUser)
-            }
+
+            (routes.currentUser.shouldBypassGroup ? builder : grouped)
+                .grouped(PassageSessionAuthenticator())
+                .grouped(PassageBearerAuthenticator())
+                .get(routes.currentUser.path, use: self.currentUser)
         }
 
     }
 
 }
 
-// MARK: - Registration
+// MARK: - Register
 
 extension Passage.Identity.RouteCollection {
 
@@ -97,18 +91,6 @@ extension Passage.Identity.RouteCollection {
             )
         }
 
-    }
-
-}
-
-// MARK: - Token Refresh
-
-extension Passage.Identity.RouteCollection {
-
-    fileprivate func refreshToken(_ req: Request) async throws -> AuthUser {
-        let form = try req.decodeContentAsFormOfType(req.contracts.refreshTokenForm)
-
-        return try await req.identity.refreshToken(form: form)
     }
 
 }

@@ -163,34 +163,10 @@ extension Passage.Passwordless {
             throw AuthenticationError.magicLinkEmailNotFound
         }
 
-        request.passage.login(user)
-
         // Mark email as verified if not already
         if !user.isEmailVerified {
             try await store.users.markEmailVerified(for: user)
         }
-
-        // Optionally revoke existing refresh tokens
-        if self.config.revokeExistingTokens {
-            try await store.tokens.revokeRefreshToken(for: user)
-        }
-
-        // Generate access token
-        let accessToken = AccessToken(
-            userId: try user.requiredIdAsString,
-            expiresAt: .now.addingTimeInterval(configuration.tokens.accessToken.timeToLive),
-            issuer: configuration.tokens.issuer,
-            audience: nil,
-            scope: nil
-        )
-
-        // Generate refresh token
-        let opaqueRefreshToken = random.generateOpaqueToken()
-        try await store.tokens.createRefreshToken(
-            for: user,
-            tokenHash: random.hashOpaqueToken(token: opaqueRefreshToken),
-            expiresAt: .now.addingTimeInterval(configuration.tokens.refreshToken.timeToLive)
-        )
 
         // Invalidate the used magic link
         try await store.magicLinkTokens.invalidateEmailMagicLinks(for: magicLink.identifier)
@@ -200,17 +176,9 @@ extension Passage.Passwordless {
             request.session.data[magicLinkSessionTokenKey] = nil
         }
 
-        return AuthUser(
-            accessToken: try await request.jwt.sign(accessToken),
-            refreshToken: opaqueRefreshToken,
-            tokenType: "Bearer",
-            expiresIn: configuration.tokens.accessToken.timeToLive,
-            user: .init(
-                id: try user.requiredIdAsString,
-                email: user.email,
-                phone: user.phone
-            )
-        )
+        request.passage.login(user)
+
+        return try await request.tokens.issue(for: user, revokeExisting: self.config.revokeExistingTokens)
     }
 
     /// Verify that the magic link is being verified from the same browser

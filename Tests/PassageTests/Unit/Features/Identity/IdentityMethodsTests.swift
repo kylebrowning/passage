@@ -99,120 +99,6 @@ struct IdentityMethodsTests {
         return opaqueToken
     }
 
-    // MARK: - refreshToken() Tests
-
-    @Test("refreshToken succeeds with valid token")
-    func refreshTokenSucceedsWithValidToken() async throws {
-        let app = try await Application.make(.testing)
-        defer { Task { try await app.asyncShutdown() } }
-        try await configure(app)
-
-        // Create user and refresh token
-        let user = try await createTestUser(app: app, email: "user@example.com")
-        let refreshToken = try await createRefreshToken(app: app, user: user)
-
-        // Create a mock request
-        let request = Request(application: app, on: app.eventLoopGroup.next())
-        let identity = Passage.Identity(request: request)
-
-        // Call refreshToken
-        let form = RefreshTokenFormImpl(refreshToken: refreshToken)
-        let authUser = try await identity.refreshToken(form: form)
-
-        // Verify response
-        #expect(authUser.accessToken.isEmpty == false)
-        #expect(authUser.refreshToken.isEmpty == false)
-        #expect(authUser.refreshToken != refreshToken) // Should be a new token
-        #expect(authUser.tokenType == "Bearer")
-        // Note: InMemoryRefreshToken.user returns a stub, so we verify the user ID instead
-        let expectedUserId = try user.requiredIdAsString
-        #expect(authUser.user.id == expectedUserId)
-    }
-
-    @Test("refreshToken throws error when token not found")
-    func refreshTokenThrowsWhenTokenNotFound() async throws {
-        let app = try await Application.make(.testing)
-        defer { Task { try await app.asyncShutdown() } }
-        try await configure(app)
-
-        let request = Request(application: app, on: app.eventLoopGroup.next())
-        let identity = Passage.Identity(request: request)
-
-        // Use a non-existent token
-        let form = RefreshTokenFormImpl(refreshToken: "non-existent-token")
-
-        await #expect(throws: AuthenticationError.self) {
-            try await identity.refreshToken(form: form)
-        }
-    }
-
-    @Test("refreshToken throws error when token is expired")
-    func refreshTokenThrowsWhenTokenExpired() async throws {
-        let app = try await Application.make(.testing)
-        defer { Task { try await app.asyncShutdown() } }
-        try await configure(app)
-
-        // Create user and expired refresh token
-        let user = try await createTestUser(app: app, email: "user@example.com")
-        let refreshToken = try await createRefreshToken(
-            app: app,
-            user: user,
-            expiresAt: Date.now.addingTimeInterval(-3600) // Expired 1 hour ago
-        )
-
-        let request = Request(application: app, on: app.eventLoopGroup.next())
-        let identity = Passage.Identity(request: request)
-
-        let form = RefreshTokenFormImpl(refreshToken: refreshToken)
-
-        await #expect(throws: AuthenticationError.self) {
-            try await identity.refreshToken(form: form)
-        }
-    }
-
-    @Test("refreshToken succeeds when token is replaced but not yet reused")
-    func refreshTokenSucceedsAfterReplacement() async throws {
-        let app = try await Application.make(.testing)
-        defer { Task { try await app.asyncShutdown() } }
-        try await configure(app)
-
-        let user = try await createTestUser(app: app, email: "user@example.com")
-        let originalToken = try await createRefreshToken(app: app, user: user)
-
-        let request = Request(application: app, on: app.eventLoopGroup.next())
-        let identity = Passage.Identity(request: request)
-
-        // Use the token once - this creates a new token and marks original as replaced
-        let form1 = RefreshTokenFormImpl(refreshToken: originalToken)
-        let authUser1 = try await identity.refreshToken(form: form1)
-        #expect(authUser1.refreshToken != originalToken)
-
-        // The new token should work
-        let form2 = RefreshTokenFormImpl(refreshToken: authUser1.refreshToken)
-        let authUser2 = try await identity.refreshToken(form: form2)
-        #expect(authUser2.refreshToken != authUser1.refreshToken)
-        #expect(authUser2.accessToken.isEmpty == false)
-    }
-
-    @Test("refreshToken creates new token with correct expiration")
-    func refreshTokenCreatesNewTokenWithCorrectExpiration() async throws {
-        let app = try await Application.make(.testing)
-        defer { Task { try await app.asyncShutdown() } }
-        try await configure(app)
-
-        let user = try await createTestUser(app: app, email: "user@example.com")
-        let refreshToken = try await createRefreshToken(app: app, user: user)
-
-        let request = Request(application: app, on: app.eventLoopGroup.next())
-        let identity = Passage.Identity(request: request)
-
-        let form = RefreshTokenFormImpl(refreshToken: refreshToken)
-        let authUser = try await identity.refreshToken(form: form)
-
-        // Verify expiration time is set correctly (3600 seconds for access token)
-        #expect(authUser.expiresIn == 3600)
-    }
-
     // MARK: - logout() Tests
 
     @Test("logout revokes all refresh tokens for user")
@@ -233,10 +119,9 @@ struct IdentityMethodsTests {
         // Logout
         try await identity.logout()
 
-        // Verify token is revoked by trying to use it
-        let form = RefreshTokenFormImpl(refreshToken: refreshToken)
+        // Verify token is revoked by trying to use it via the Tokens feature
         await #expect(throws: AuthenticationError.self) {
-            try await identity.refreshToken(form: form)
+            try await request.tokens.refresh(using: refreshToken)
         }
     }
 
@@ -292,15 +177,13 @@ struct IdentityMethodsTests {
         // Logout should revoke all tokens
         try await identity.logout()
 
-        // Verify both tokens are revoked
+        // Verify both tokens are revoked via the Tokens feature
         await #expect(throws: AuthenticationError.self) {
-            let form1 = RefreshTokenFormImpl(refreshToken: token1)
-            try await identity.refreshToken(form: form1)
+            try await request.tokens.refresh(using: token1)
         }
 
         await #expect(throws: AuthenticationError.self) {
-            let form2 = RefreshTokenFormImpl(refreshToken: token2)
-            try await identity.refreshToken(form: form2)
+            try await request.tokens.refresh(using: token2)
         }
     }
 
@@ -401,14 +284,6 @@ struct IdentityMethodsTests {
 }
 
 // MARK: - Helper Form Implementations
-
-private struct RefreshTokenFormImpl: RefreshTokenForm {
-    static func validations(_ validations: inout Validations) {
-        validations.add("refreshToken", as: String.self, is: !.empty)
-    }
-
-    let refreshToken: String
-}
 
 private struct LoginFormImpl: LoginForm {
     static func validations(_ validations: inout Validations) {
