@@ -93,6 +93,10 @@ struct StoreProtocolsTests {
             )
         }
 
+        func addIdentifier(to user: any User, identifier: Identifier, with credential: Credential?) async throws -> any User {
+            user
+        }
+
         func find(byId id: String) async throws -> (any User)? {
             nil
         }

@@ -210,6 +210,52 @@ public extension Passage.OnlyForTest.InMemoryStore {
             users[userId]?.passwordHash = passwordHash
         }
 
+        @discardableResult
+        public func addIdentifier(
+            to user: any User,
+            identifier: Identifier,
+            with credential: Credential?
+        ) async throws -> any User {
+            guard let userId = user.id?.description else {
+                throw PassageError.unexpected(message: "User ID is missing")
+            }
+
+            // Check for duplicate identifier
+            let identifierKey = identifier.kind == .federated
+                ? "\(identifier.provider ?? ""):\(identifier.value)"
+                : identifier.value
+
+            if identifierIndex[identifierKey] != nil {
+                throw identifier.errorWhenIdentifierAlreadyRegistered
+            }
+
+            // Update user with new identifier if it's a standard type
+            guard var existingUser = users[userId] else {
+                throw PassageError.unexpected(message: "User not found")
+            }
+
+            switch identifier.kind {
+            case .email:
+                existingUser.email = identifier.value
+            case .phone:
+                existingUser.phone = identifier.value
+            case .username:
+                existingUser.username = identifier.value
+            case .federated:
+                break // Federated identifiers don't update user fields directly
+            }
+
+            // Update password if credential provided
+            if let credential = credential, credential.kind == .password {
+                existingUser.passwordHash = credential.secret
+            }
+
+            // Store updated user back in dictionary
+            users[userId] = existingUser
+            identifierIndex[identifierKey] = userId
+            return existingUser
+        }
+
         public func createWithEmail(_ email: String, verified: Bool) async throws -> any User {
             // Check for duplicate identifier
             if identifierIndex[email] != nil {

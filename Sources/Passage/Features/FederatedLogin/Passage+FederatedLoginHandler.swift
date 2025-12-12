@@ -1,61 +1,37 @@
 import Vapor
 
+// MARK: - Federated Login Handler
+
 extension Passage {
 
-    public struct FederatedLogin: Sendable {
-
+    struct FederatedLoginHandler: Sendable {
         let app: Application
+        let configuration: Passage.Configuration
 
-        func register(
-            config: Passage.Configuration,
-        ) throws {
-            try service?.register(
-                router: app,
-                origin: config.origin,
-                group: config.routes.group,
-                config: config.oauth,
-            ) { provider, request, tokens in
-                print(">>> \(tokens)")
-                // TODO: Entry Point for handling federated login callback
-                // merge or create user, issue Passage access token, etc.
-                return request.redirect(to: config.oauth.redirectLocation)
+        func register() throws {
+            guard let service = app.passage.federatedLogin else {
+                return
             }
 
-            try service?.register(
+            try service.register(
                 router: app,
-                origin: config.origin,
-                config: config.oauth,
-            ) { [weak self] (request, provider, identifier, info) in
+                origin: configuration.origin,
+                group: configuration.routes.group,
+                config: configuration.oauth,
+            ) { (request, identity) in
+                let user = try await request.federated.login(
+                    identity: identity,
+                )
 
+                // Store tokens in session if using session auth
+                if request.hasSession {
+                    request.session.data["access_token"] = user.accessToken
+                    request.session.data["refresh_token"] = user.refreshToken
+                }
+
+                return request.redirect(to: configuration.oauth.redirectLocation)
             }
         }
-    }
-
-    var oauth: FederatedLogin {
-        FederatedLogin(
-            app: app
-        )
-    }
-
-}
-
-// MARK: - Service Accessor
-
-extension Passage.FederatedLogin {
-
-    var service: (any Passage.FederatedLoginService)? {
-        app.passage.storage.services.federatedLogin
-    }
-}
-
-// MARK: -
-
-extension Passage.FederatedLogin {
-
-    func signIn(
-        with provider: Provider,
-        identifier: Identifier,
-    ) async throws -> Void {
     }
 
 }

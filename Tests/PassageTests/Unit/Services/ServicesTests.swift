@@ -41,6 +41,9 @@ struct ServicesTests {
                 isPhoneVerified: false
             )
         }
+        func addIdentifier(to user: any User, identifier: Identifier, with credential: Credential?) async throws -> any User {
+            user
+        }
         func find(byId id: String) async throws -> (any User)? { nil }
         func find(byIdentifier identifier: Identifier) async throws -> (any User)? { nil }
         func markEmailVerified(for user: any User) async throws {}
