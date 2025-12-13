@@ -10,6 +10,7 @@ public extension Passage {
         var verificationCodes: any VerificationCodeStore { get }
         var restorationCodes: any RestorationCodeStore { get }
         var magicLinkTokens: any MagicLinkTokenStore { get }
+        var exchangeTokens: any ExchangeTokenStore { get }
     }
 
 }
@@ -21,9 +22,8 @@ public extension Passage {
     protocol UserStore: Sendable {
         associatedtype ConcreateUser: User
         var userType: ConcreateUser.Type { get }
-        func create(with credential: Credential) async throws
+        func create(identifier: Identifier, with credential: Credential?) async throws -> (any User)
         func find(byId id: String) async throws -> (any User)?
-        func find(byCredential credential: Credential) async throws -> (any User)?
         func find(byIdentifier identifier: Identifier) async throws -> (any User)?
         func markEmailVerified(for user: any User) async throws
         func markPhoneVerified(for user: any User) async throws
@@ -42,6 +42,17 @@ public extension Passage {
         ///  - verified: Whether the phone number should be marked as verified
         ///  - Returns: The newly created user
         func createWithPhone(_ phone: String, verified: Bool) async throws -> any User
+
+        /// Add identifier to existing user (for account linking)
+        /// - Parameters:
+        ///   - identifier: The identifier to add (e.g., federated OAuth identifier)
+        ///   - user: The user to add the identifier to
+        ///   - credential: Optional credential (for converting federated user to password user)
+        func addIdentifier(
+            _ identifier: Identifier,
+            to user: any User,
+            with credential: Credential?
+        ) async throws
     }
 
 }
@@ -217,6 +228,38 @@ public extension Passage {
 
         /// Increment the failed attempt count for a magic link
         func incrementFailedAttempts(for magicLink: any MagicLinkToken) async throws
+    }
+
+}
+
+// MARK: - Exchange Token Store
+
+public extension Passage {
+
+    protocol ExchangeTokenStore: Sendable {
+
+        /// Create a new exchange token for a user
+        /// - Parameters:
+        ///   - user: The user to create the exchange token for
+        ///   - tokenHash: SHA256 hash of the exchange code
+        ///   - expiresAt: Expiration date for the exchange token (short TTL, e.g., 60 seconds)
+        /// - Returns: The created exchange token
+        @discardableResult
+        func createExchangeToken(
+            for user: any User,
+            tokenHash: String,
+            expiresAt: Date
+        ) async throws -> any ExchangeToken
+
+        /// Find an exchange token by its hash
+        func find(exchangeTokenHash hash: String) async throws -> (any ExchangeToken)?
+
+        /// Mark an exchange token as consumed
+        func consume(exchangeToken: any ExchangeToken) async throws
+
+        /// Clean up expired exchange tokens
+        /// - Parameter date: Remove tokens expired before this date
+        func cleanupExpiredTokens(before date: Date) async throws
     }
 
 }

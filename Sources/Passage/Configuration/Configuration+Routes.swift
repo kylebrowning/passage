@@ -34,6 +34,14 @@ public extension Passage.Configuration {
             }
         }
 
+        public struct ExchangeCode: Sendable {
+            public static let `default` = ExchangeCode(path: "token", "exchange")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
         public struct CurrentUser: Sendable {
             public static let `default` = CurrentUser(path: "me")
             let path: [PathComponent]
@@ -50,6 +58,7 @@ public extension Passage.Configuration {
             login: Login,
             logout: Logout,
             refreshToken: RefreshToken,
+            exchangeCode: ExchangeCode,
             currentUser: CurrentUser,
         ) {
             self.group = group
@@ -57,6 +66,7 @@ public extension Passage.Configuration {
             self.login = login
             self.logout = logout
             self.refreshToken = refreshToken
+            self.exchangeCode = exchangeCode
             self.currentUser = currentUser
         }
 
@@ -66,6 +76,7 @@ public extension Passage.Configuration {
             login: Login               = .default,
             logout: Logout             = .default,
             refreshToken: RefreshToken = .default,
+            exchangeCode: ExchangeCode = .default,
             currentUser: CurrentUser   = .default,
         ) {
             self.init(
@@ -74,6 +85,7 @@ public extension Passage.Configuration {
                 login: login,
                 logout: logout,
                 refreshToken: refreshToken,
+                exchangeCode: exchangeCode,
                 currentUser: currentUser
             )
         }
@@ -83,6 +95,7 @@ public extension Passage.Configuration {
             login: Login               = .default,
             logout: Logout             = .default,
             refreshToken: RefreshToken = .default,
+            exchangeCode: ExchangeCode = .default,
             currentUser: CurrentUser   = .default,
         ) {
             self.init(
@@ -91,6 +104,7 @@ public extension Passage.Configuration {
                 login: login,
                 logout: logout,
                 refreshToken: refreshToken,
+                exchangeCode: exchangeCode,
                 currentUser: currentUser
             )
         }
@@ -100,6 +114,7 @@ public extension Passage.Configuration {
         let login: Login
         let logout: Logout
         let refreshToken: RefreshToken
+        let exchangeCode: ExchangeCode
         let currentUser: CurrentUser
     }
 }

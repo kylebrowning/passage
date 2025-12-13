@@ -32,6 +32,8 @@ public extension Passage.Configuration {
         let passwordResetConfirm: PasswordResetConfirmView?
         let magicLinkRequest: MagicLinkRequestView?
         let magicLinkVerify: MagicLinkVerifyView?
+        let oauthLinkSelect: OAuthLinkSelectView?
+        let oauthLinkVerify: OAuthLinkVerifyView?
 
         public init(
             register: RegisterView? = nil,
@@ -39,7 +41,9 @@ public extension Passage.Configuration {
             passwordResetRequest: PasswordResetRequestView? = nil,
             passwordResetConfirm: PasswordResetConfirmView? = nil,
             magicLinkRequest: MagicLinkRequestView? = nil,
-            magicLinkVerify: MagicLinkVerifyView? = nil
+            magicLinkVerify: MagicLinkVerifyView? = nil,
+            oauthLinkSelect: OAuthLinkSelectView? = nil,
+            oauthLinkVerify: OAuthLinkVerifyView? = nil
         ) {
             self.register = register
             self.login = login
@@ -47,6 +51,8 @@ public extension Passage.Configuration {
             self.passwordResetConfirm = passwordResetConfirm
             self.magicLinkRequest = magicLinkRequest
             self.magicLinkVerify = magicLinkVerify
+            self.oauthLinkSelect = oauthLinkSelect
+            self.oauthLinkVerify = oauthLinkVerify
         }
     }
 
@@ -62,7 +68,9 @@ extension Passage.Configuration.Views {
         passwordResetRequest != nil ||
         passwordResetConfirm != nil ||
         magicLinkRequest != nil ||
-        magicLinkVerify != nil
+        magicLinkVerify != nil ||
+        oauthLinkSelect != nil ||
+        oauthLinkVerify != nil
     }
 }
 
@@ -198,6 +206,46 @@ public extension Passage.Configuration.Views {
             style: Passage.Views.Style,
             theme: Passage.Views.Theme,
             redirect: Redirect
+        ) {
+            self.style = style
+            self.theme = theme
+            self.redirect = redirect
+        }
+    }
+
+}
+
+// MARK: - OAuth Link Views
+
+public extension Passage.Configuration.Views {
+
+    struct OAuthLinkSelectView: Sendable, View {
+        let name: String = "oauth-link-select"
+        let style: Passage.Views.Style
+        let theme: Passage.Views.Theme
+        let redirect: Redirect
+
+        public init(
+            style: Passage.Views.Style,
+            theme: Passage.Views.Theme,
+            redirect: Redirect = .init()
+        ) {
+            self.style = style
+            self.theme = theme
+            self.redirect = redirect
+        }
+    }
+
+    struct OAuthLinkVerifyView: Sendable, View {
+        let name: String = "oauth-link-verify"
+        let style: Passage.Views.Style
+        let theme: Passage.Views.Theme
+        let redirect: Redirect
+
+        public init(
+            style: Passage.Views.Style,
+            theme: Passage.Views.Theme,
+            redirect: Redirect = .init()
         ) {
             self.style = style
             self.theme = theme

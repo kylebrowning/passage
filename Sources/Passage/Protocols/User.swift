@@ -3,7 +3,7 @@ import Vapor
 // MARK: - User
 
 public protocol User: Authenticatable, SessionAuthenticatable, Sendable {
-    associatedtype Id: CustomStringConvertible, Codable, Hashable, Sendable
+    associatedtype Id: CustomStringConvertible, Codable, Hashable, Equatable, Sendable
 
     var id: Id? { get }
 
@@ -20,6 +20,18 @@ public protocol User: Authenticatable, SessionAuthenticatable, Sendable {
     var isEmailVerified: Bool { get }
 
     var isPhoneVerified: Bool { get }
+}
+
+extension User {
+
+    func equals(to other: some User) -> Bool {
+        do {
+            return try self.requiredIdAsString == other.requiredIdAsString
+        } catch {
+            return false
+        }
+    }
+
 }
 
 // MARK: - Helpers
@@ -56,17 +68,18 @@ extension User {
             }
         case .username:
             break
+        case .federated:
+            break
         }
     }
 }
 
 // MARK: - User Info
 
-protocol UserInfo: Sendable {
+public protocol UserInfo: Sendable {
 
     var email: String? { get }
 
     var phone: String? { get }
 
 }
-

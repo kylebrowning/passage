@@ -1,42 +1,115 @@
 import Vapor
 
-extension Passage {
+// MARK: - Federated Login
 
-    public struct FederatedLogin: Sendable {
+public extension Passage {
 
-        let app: Application
-
-        func register(
-            config: Passage.Configuration,
-        ) throws {
-            try service?.register(
-                router: app,
-                origin: config.origin,
-                group: config.routes.group,
-                config: config.oauth,
-            ) { provider, request, tokens in
-                print(">>> \(tokens)")
-                // TODO: Entry Point for handling federated login callback
-                // merge or create user, issue Passage access token, etc.
-                return request.redirect(to: config.oauth.redirectLocation)
-            }
-        }
-    }
-
-    var oauth: FederatedLogin {
-        FederatedLogin(
-            app: app
-        )
+    struct FederatedLogin: Sendable {
+        let request: Request
     }
 
 }
 
-// MARK: - Service Accessor
+// MARK: - Service Accessors
 
 extension Passage.FederatedLogin {
 
-    var service: (any Passage.FederatedLoginService)? {
-        app.passage.storage.services.federatedLogin
+    var store: Passage.Store {
+        request.store
     }
+
+    var tokens: Passage.Tokens {
+        request.tokens
+    }
+
+    var configuration: Passage.Configuration.FederatedLogin {
+        request.configuration.oauth
+    }
+
 }
 
+extension Request {
+
+    var federated: Passage.FederatedLogin {
+        .init(request: self)
+    }
+
+}
+
+// MARK: - Sign In
+
+extension Passage.FederatedLogin {
+
+    /// Login with federated identity, with support for manual account linking
+    /// Returns Response (redirect to linking form or to configured redirect location)
+    func login(
+        identity: FederatedIdentity
+    ) async throws -> Response {
+        // Check if already has this federated identifier
+        if let user = try await store.users.find(byIdentifier: identity.identifier) {
+            return try await completeLogin(for: user)
+        }
+
+        let linkingResult: Passage.Linking.Result
+        switch configuration.accountLinking.strategy {
+        case .automatic(let allowedIdentifiers, let fallbackToManual):
+            linkingResult = try await request.linking.automatic.perform(
+                for: identity,
+                withAllowedIdentifiers: allowedIdentifiers,
+                fallbackToManualOnMultipleMatches: fallbackToManual
+            )
+            break
+        case .manual(let allowedIdentifiers):
+            linkingResult = try await request.linking.manual.initiate(
+                for: identity,
+                withAllowedIdentifiers: allowedIdentifiers,
+            )
+        case .disabled:
+            linkingResult = .skipped
+            break
+        }
+
+        switch linkingResult {
+        case .complete(let user):
+            return try await completeLogin(for: user)
+        case .skipped:
+            let user = try await store.users.create(
+                identifier: identity.identifier,
+                with: nil
+            )
+            return try await completeLogin(for: user)
+        case .conflict(_):
+            let user = try await store.users.create(
+                identifier: identity.identifier,
+                with: nil
+            )
+            return try await completeLogin(for: user)
+        case .initiated:
+            return request.redirect(to: "/" + (request.configuration.routes.group + configuration.linkSelectPath).string)
+        }
+    }
+
+    /// Complete login by issuing tokens and redirecting
+    private func completeLogin(for user: any User) async throws -> Response {
+        // Session authentication (for SSR)
+        request.passage.login(user)
+
+        // Build redirect URL with generated exchange code for API clients
+        let redirectURL = buildRedirectURL(
+            base: configuration.redirectLocation,
+            code: try await request.tokens.createExchangeCode(for: user)
+        )
+
+        return request.redirect(to: redirectURL)
+    }
+
+    /// Build redirect URL with exchange code as query parameter
+    private func buildRedirectURL(base: String, code: String) -> String {
+        if base.contains("?") {
+            return "\(base)&code=\(code)"
+        } else {
+            return "\(base)?code=\(code)"
+        }
+    }
+
+}

@@ -25,11 +25,13 @@ struct ViewsRouteCollectionTests {
         let restorationConfig = Passage.Configuration.Restoration()
 
         let passwordlessConfig = Passage.Configuration.Passwordless()
+        let oauthConfig = Passage.Configuration.FederatedLogin(providers: [])
         let collection = Passage.Views.RouteCollection(
             config: viewsConfig,
             routes: routesConfig,
             restoration: restorationConfig,
             passwordless: passwordlessConfig,
+            oauth: oauthConfig,
             group: []
         )
 
@@ -55,11 +57,13 @@ struct ViewsRouteCollectionTests {
         let groupPath: [PathComponent] = ["auth", "views"]
 
         let passwordlessConfig = Passage.Configuration.Passwordless()
+        let oauthConfig = Passage.Configuration.FederatedLogin(providers: [])
         let collection = Passage.Views.RouteCollection(
             config: viewsConfig,
             routes: routesConfig,
             restoration: restorationConfig,
             passwordless: passwordlessConfig,
+            oauth: oauthConfig,
             group: groupPath
         )
 
@@ -88,11 +92,13 @@ struct ViewsRouteCollectionTests {
         let restorationConfig = Passage.Configuration.Restoration()
 
         let passwordlessConfig = Passage.Configuration.Passwordless()
+        let oauthConfig = Passage.Configuration.FederatedLogin(providers: [])
         let collection = Passage.Views.RouteCollection(
             config: viewsConfig,
             routes: routesConfig,
             restoration: restorationConfig,
             passwordless: passwordlessConfig,
+            oauth: oauthConfig,
             group: []
         )
 
@@ -132,11 +138,13 @@ struct ViewsRouteCollectionTests {
         let restorationConfig = Passage.Configuration.Restoration()
 
         let passwordlessConfig = Passage.Configuration.Passwordless()
+        let oauthConfig = Passage.Configuration.FederatedLogin(providers: [])
         let collection = Passage.Views.RouteCollection(
             config: viewsConfig,
             routes: routesConfig,
             restoration: restorationConfig,
             passwordless: passwordlessConfig,
+            oauth: oauthConfig,
             group: []
         )
 
@@ -158,11 +166,13 @@ struct ViewsRouteCollectionTests {
         let restorationConfig = Passage.Configuration.Restoration()
 
         let passwordlessConfig = Passage.Configuration.Passwordless()
+        let oauthConfig = Passage.Configuration.FederatedLogin(providers: [])
         let collection = Passage.Views.RouteCollection(
             config: viewsConfig,
             routes: routesConfig,
             restoration: restorationConfig,
             passwordless: passwordlessConfig,
+            oauth: oauthConfig,
             group: []
         )
 
@@ -192,11 +202,13 @@ struct ViewsRouteCollectionTests {
         let restorationConfig = Passage.Configuration.Restoration()
 
         let passwordlessConfig = Passage.Configuration.Passwordless()
+        let oauthConfig = Passage.Configuration.FederatedLogin(providers: [])
         let collection = Passage.Views.RouteCollection(
             config: viewsConfig,
             routes: routesConfig,
             restoration: restorationConfig,
             passwordless: passwordlessConfig,
+            oauth: oauthConfig,
             group: []
         )
 
@@ -229,11 +241,13 @@ struct ViewsRouteCollectionTests {
         )
 
         let passwordlessConfig = Passage.Configuration.Passwordless()
+        let oauthConfig = Passage.Configuration.FederatedLogin(providers: [])
         let collection = Passage.Views.RouteCollection(
             config: viewsConfig,
             routes: routesConfig,
             restoration: restorationConfig,
             passwordless: passwordlessConfig,
+            oauth: oauthConfig,
             group: []
         )
 
@@ -257,12 +271,14 @@ struct ViewsRouteCollectionTests {
         let routesConfig = Passage.Configuration.Routes()
         let restorationConfig = Passage.Configuration.Restoration()
         let passwordlessConfig = Passage.Configuration.Passwordless()
+        let oauthConfig = Passage.Configuration.FederatedLogin(providers: [])
 
         let collection = Passage.Views.RouteCollection(
             config: viewsConfig,
             routes: routesConfig,
             restoration: restorationConfig,
             passwordless: passwordlessConfig,
+            oauth: oauthConfig,
             group: group
         )
 

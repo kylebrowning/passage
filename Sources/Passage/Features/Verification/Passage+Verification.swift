@@ -54,7 +54,8 @@ extension Passage.Verification {
     /// Send email verification code to a user.
     /// Code is generated and stored synchronously.
     /// Delivery is dispatched to queue if available, otherwise sent synchronously.
-    func sendEmailCode(to user: any User) async throws {
+    @discardableResult
+    func sendEmailCode(to user: any User) async throws -> String {
         guard emailDelivery != nil else {
             throw PassageError.emailDeliveryNotConfigured
         }
@@ -83,10 +84,30 @@ extension Passage.Verification {
             code: code,
             userId: try user.requiredIdAsString
         )
+
+        return code
+    }
+
+    /// Send email verification code to an email address and return the code.
+    /// Used for account linking verification where we need the plain text code.
+    /// - Parameter email: The email address to send the code to
+    /// - Returns: The plain text verification code sent
+    func sendEmailCode(toEmail email: String) async throws -> String {
+        guard emailDelivery != nil else {
+            throw PassageError.emailDeliveryNotConfigured
+        }
+
+        // Find user by email
+        guard let user = try await store.users.find(byIdentifier: .email(email)) else {
+            throw AuthenticationError.emailNotSet
+        }
+
+        return try await sendEmailCode(to: user)
     }
 
     /// Send phone verification code to a user.
-    func sendPhoneCode(to user: any User) async throws {
+    @discardableResult
+    func sendPhoneCode(to user: any User) async throws -> String {
         guard phoneDelivery != nil else {
             throw PassageError.phoneDeliveryNotConfigured
         }
@@ -115,6 +136,21 @@ extension Passage.Verification {
             code: code,
             userId: try user.requiredIdAsString
         )
+
+        return code
+    }
+
+    func sendPhoneCode(toPhone phone: String) async throws -> String {
+        guard phoneDelivery != nil else {
+            throw PassageError.phoneDeliveryNotConfigured
+        }
+
+        // Find user by phone
+        guard let user = try await store.users.find(byIdentifier: .phone(phone)) else {
+            throw AuthenticationError.phoneNotSet
+        }
+
+        return try await sendPhoneCode(to: user)
     }
 
     /// Send verification code based on identifier kind.
@@ -126,6 +162,8 @@ extension Passage.Verification {
             try await sendPhoneCode(to: user)
         case .username:
             break // Username doesn't require verification
+        case .federated:
+            break // Federated accounts don't require verification
         }
     }
 

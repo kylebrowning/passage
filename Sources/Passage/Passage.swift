@@ -69,7 +69,14 @@ public struct Passage: Sendable {
                 routes: configuration.routes,
                 restoration: configuration.restoration,
                 passwordless: configuration.passwordless,
+                oauth: configuration.oauth,
                 group: configuration.routes.group
+            ))
+        }
+
+        if configuration.oauth.accountLinking.enabled {
+            try app.register(collection: Linking.RouteCollection(
+                configuration: configuration
             ))
         }
 
@@ -90,7 +97,7 @@ public struct Passage: Sendable {
             app.queues.add(Passwordless.SendEmailMagicLinkJob())
         }
 
-        try oauth.register(config: configuration)
+        try FederatedLoginHandler(app: app, configuration: configuration).register()
     }
 
 }

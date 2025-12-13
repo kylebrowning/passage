@@ -140,4 +140,55 @@ struct TokensRouteCollectionTests {
         #expect(collection1.routes.refreshToken.path[0] == PathComponent.constant("refresh1"))
         #expect(collection2.routes.refreshToken.path[0] == PathComponent.constant("refresh2"))
     }
+
+    // MARK: - Exchange Code Route Tests
+
+    @Test("Passage.Tokens.RouteCollection default exchange code path")
+    func routeCollectionDefaultExchangeCodePath() {
+        let routes = Passage.Configuration.Routes()
+        let collection = Passage.Tokens.RouteCollection(routes: routes)
+
+        #expect(collection.routes.exchangeCode.path.count == 2)
+        #expect(collection.routes.exchangeCode.path[0] == PathComponent.constant("token"))
+        #expect(collection.routes.exchangeCode.path[1] == PathComponent.constant("exchange"))
+    }
+
+    @Test("Passage.Tokens.RouteCollection with custom exchange code path")
+    func routeCollectionWithCustomExchangeCodePath() {
+        let routes = Passage.Configuration.Routes(
+            exchangeCode: .init(path: "oauth", "callback", "exchange")
+        )
+        let collection = Passage.Tokens.RouteCollection(routes: routes)
+
+        #expect(collection.routes.exchangeCode.path.count == 3)
+        #expect(collection.routes.exchangeCode.path[0] == PathComponent.constant("oauth"))
+        #expect(collection.routes.exchangeCode.path[1] == PathComponent.constant("callback"))
+        #expect(collection.routes.exchangeCode.path[2] == PathComponent.constant("exchange"))
+    }
+
+    @Test("Passage.Tokens.RouteCollection preserves exchange code with other routes")
+    func routeCollectionPreservesExchangeCodeWithOtherRoutes() {
+        let customRefreshToken = Passage.Configuration.Routes.RefreshToken(path: "custom", "refresh")
+        let customExchangeCode = Passage.Configuration.Routes.ExchangeCode(path: "custom", "exchange")
+
+        let routes = Passage.Configuration.Routes(
+            refreshToken: customRefreshToken,
+            exchangeCode: customExchangeCode
+        )
+        let collection = Passage.Tokens.RouteCollection(routes: routes)
+
+        #expect(collection.routes.refreshToken.path == customRefreshToken.path)
+        #expect(collection.routes.exchangeCode.path == customExchangeCode.path)
+    }
+
+    @Test("Passage.Tokens.RouteCollection exchange code with group")
+    func routeCollectionExchangeCodeWithGroup() {
+        let routes = Passage.Configuration.Routes(
+            group: "api", "auth"
+        )
+        let collection = Passage.Tokens.RouteCollection(routes: routes)
+
+        #expect(collection.routes.group.count == 2)
+        #expect(collection.routes.exchangeCode.path.count == 2)
+    }
 }

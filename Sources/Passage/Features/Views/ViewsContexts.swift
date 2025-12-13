@@ -217,3 +217,35 @@ extension Passage.Views {
     }
 
 }
+
+// MARK: - OAuth Link Select View Context
+
+extension Passage.Views {
+
+    struct OAuthLinkSelectViewContext: Content {
+
+        struct Candidate: Content {
+            let userId: String
+            let maskedEmail: String?
+            let maskedPhone: String?
+        }
+
+        let provider: String
+        let candidates: [Candidate]
+        let error: String?
+    }
+
+}
+
+// MARK: - OAuth Link Verify View Context
+
+extension Passage.Views {
+
+    struct OAuthLinkVerifyViewContext: Content {
+        let maskedEmail: String?
+        let hasPassword: Bool
+        let canUseEmailCode: Bool
+        let error: String?
+    }
+
+}

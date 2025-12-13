@@ -53,11 +53,27 @@ extension Passage {
         static func validations(_ validations: inout Validations) {
             validations.add("refreshToken", as: String.self, is: !.empty)
         }
-        
+
         let refreshToken: String
 
         func validate() throws {
             // No additional validation needed for refresh token form
+        }
+    }
+}
+
+// MARK: - ExchangeCode Form Default Implementation
+
+extension Passage {
+    struct DefaultExchangeCodeForm: ExchangeCodeForm {
+        static func validations(_ validations: inout Validations) {
+            validations.add("code", as: String.self, is: !.empty)
+        }
+
+        let code: String
+
+        func validate() throws {
+            // No additional validation needed for exchange code form
         }
     }
 }
@@ -173,6 +189,34 @@ extension Passage {
         }
 
         let phone: String
+    }
+
+}
+
+//
+
+extension Passage {
+
+    // MARK: Link Account Select Form
+
+    struct DefaultLinkAccountSelectForm: LinkAccountSelectForm {
+        static func validations(_ validations: inout Validations) {
+            validations.add("selectedUserId", as: String.self, is: !.empty)
+        }
+
+        let selectedUserId: String
+    }
+
+    // MARK: Link Account Verify Form
+
+    struct DefaultLinkAccountVerifyForm: LinkAccountVerifyForm {
+        static func validations(_ validations: inout Validations) {
+
+        }
+
+        let password: String?
+
+        let verificationCode: String?
     }
 
 }

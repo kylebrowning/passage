@@ -15,6 +15,7 @@ A comprehensive identity management and authentication framework for Vapor appli
 - 🔄 **Refresh Token Rotation** - Secure token refresh with family-based revocation
 - 🔑 **Password Reset Flow** - Email and phone-based password recovery
 - 🌐 **OAuth Integration** - Federated login (Google, GitHub, custom providers)
+- 🔗 **Account Linking** - Link multiple identifiers to a single user account (automatic or manual)
 - 📋 **Web Forms** - Built-in Leaf templates for registration, login, and password reset
 - ⚡ **Async Queue Support** - Optional background job processing via Vapor Queues
 - 🔧 **Protocol-Based Services** - Pluggable storage, email, phone, and OAuth providers
@@ -309,7 +310,15 @@ try await app.passage.configure(
                     credentials: .conventional,
                     scope: ["profile", "email"]
                 )
-            ]
+            ],
+            accountLinking: .init(
+                strategy: .automatic(
+                    allowed: [.email, .phone],
+                    // Links accounts automatically by matching identifiers;
+                    // falls back to manual linking when multiple matches exist
+                    fallbackToManualOnMultipleMatches: true
+                )
+            )
         ),
 
         // Web form views (Leaf templates)
