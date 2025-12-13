@@ -7,6 +7,7 @@ public extension Passage {
         let logoutForm: any LogoutForm.Type
         let registerForm: any RegisterForm.Type
         let refreshTokenForm: any RefreshTokenForm.Type
+        let exchangeCodeForm: any ExchangeCodeForm.Type
         let emailVerificationRequestForm: any EmailVerificationRequestForm.Type
         let emailVerificationConfirmForm: any EmailVerificationConfirmForm.Type
         let phoneVerificationRequestForm: any PhoneVerificationRequestForm.Type
@@ -20,12 +21,15 @@ public extension Passage {
         let emailMagicLinkRequestForm: any EmailMagicLinkRequestForm.Type
         let emailMagicLinkVerifyForm: any EmailMagicLinkVerifyForm.Type
         let emailMagicLinkResendForm: any EmailMagicLinkResendForm.Type
+        let linkAccountSelectForm: any LinkAccountSelectForm.Type
+        let linkAccountVerifyForm: any LinkAccountVerifyForm.Type
 
         public init(
             loginForm: (any LoginForm.Type)? = nil,
             logoutForm: (any LogoutForm.Type)? = nil,
             registerForm: (any RegisterForm.Type)? = nil,
             refreshTokenForm: (any RefreshTokenForm.Type)? = nil,
+            exchangeCodeForm: (any ExchangeCodeForm.Type)? = nil,
             emailVerificationRequestForm: (any EmailVerificationRequestForm.Type)? = nil,
             emailVerificationConfirmForm: (any EmailVerificationConfirmForm.Type)? = nil,
             phoneVerificationRequestForm: (any PhoneVerificationRequestForm.Type)? = nil,
@@ -39,12 +43,14 @@ public extension Passage {
             emailMagicLinkRequestForm: (any EmailMagicLinkRequestForm.Type)? = nil,
             emailMagicLinkVerifyForm: (any EmailMagicLinkVerifyForm.Type)? = nil,
             emailMagicLinkResendForm: (any EmailMagicLinkResendForm.Type)? = nil,
-
+            linkAccountSelectForm: (any LinkAccountSelectForm.Type)? = nil,
+            linkAccountVerifyForm: (any LinkAccountVerifyForm.Type)? = nil,
         ) {
             self.loginForm = loginForm ?? DefaultLoginForm.self
             self.logoutForm = logoutForm ?? DefaultLogoutForm.self
             self.registerForm = registerForm ?? DefaultRegisterForm.self
             self.refreshTokenForm = refreshTokenForm ?? DefaultRefreshTokenForm.self
+            self.exchangeCodeForm = exchangeCodeForm ?? DefaultExchangeCodeForm.self
             self.emailVerificationRequestForm = emailVerificationRequestForm ?? DefaultEmailVerificationRequestForm.self
             self.emailVerificationConfirmForm = emailVerificationConfirmForm ?? DefaultEmailVerificationConfirmForm.self
             self.phoneVerificationRequestForm = phoneVerificationRequestForm ?? DefaultPhoneVerificationRequestForm.self
@@ -58,6 +64,8 @@ public extension Passage {
             self.emailMagicLinkRequestForm = emailMagicLinkRequestForm ?? DefaultEmailMagicLinkRequestForm.self
             self.emailMagicLinkVerifyForm = emailMagicLinkVerifyForm ?? DefaultEmailMagicLinkVerifyForm.self
             self.emailMagicLinkResendForm = emailMagicLinkResendForm ?? DefaultEmailMagicLinkResendForm.self
+            self.linkAccountSelectForm = linkAccountSelectForm ?? DefaultLinkAccountSelectForm.self
+            self.linkAccountVerifyForm = linkAccountVerifyForm ?? DefaultLinkAccountVerifyForm.self
         }
     }
 

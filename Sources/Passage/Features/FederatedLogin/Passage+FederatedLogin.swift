@@ -40,43 +40,76 @@ extension Request {
 
 extension Passage.FederatedLogin {
 
+    /// Login with federated identity, with support for manual account linking
+    /// Returns Response (redirect to linking form or to configured redirect location)
     func login(
         identity: FederatedIdentity
-    ) async throws -> AuthUser {
+    ) async throws -> Response {
+        // Check if already has this federated identifier
         if let user = try await store.users.find(byIdentifier: identity.identifier) {
-            request.passage.login(user)
-            return try await request.tokens.issue(for: user)
+            return try await completeLogin(for: user)
         }
 
-        let user = try await store.users.create(
-            identifier: identity.identifier,
-            with: nil
-        )
+        let linkingResult: Passage.Linking.Result
+        switch configuration.accountLinking.strategy {
+        case .automatic(let allowedIdentifiers, let fallbackToManual):
+            linkingResult = try await request.linking.automatic.perform(
+                for: identity,
+                withAllowedIdentifiers: allowedIdentifiers,
+                fallbackToManualOnMultipleMatches: fallbackToManual
+            )
+            break
+        case .manual(let allowedIdentifiers):
+            linkingResult = try await request.linking.manual.initiate(
+                for: identity,
+                withAllowedIdentifiers: allowedIdentifiers,
+            )
+        case .disabled:
+            linkingResult = .skipped
+            break
+        }
+
+        switch linkingResult {
+        case .complete(let user):
+            return try await completeLogin(for: user)
+        case .skipped:
+            let user = try await store.users.create(
+                identifier: identity.identifier,
+                with: nil
+            )
+            return try await completeLogin(for: user)
+        case .conflict(_):
+            let user = try await store.users.create(
+                identifier: identity.identifier,
+                with: nil
+            )
+            return try await completeLogin(for: user)
+        case .initiated:
+            return request.redirect(to: "/" + (request.configuration.routes.group + configuration.linkSelectPath).string)
+        }
+    }
+
+    /// Complete login by issuing tokens and redirecting
+    private func completeLogin(for user: any User) async throws -> Response {
+        // Session authentication (for SSR)
         request.passage.login(user)
-        return try await request.tokens.issue(for: user)
+
+        // Build redirect URL with generated exchange code for API clients
+        let redirectURL = buildRedirectURL(
+            base: configuration.redirectLocation,
+            code: try await request.tokens.createExchangeCode(for: user)
+        )
+
+        return request.redirect(to: redirectURL)
     }
 
-}
-
-extension Passage.FederatedLogin {
-
-    func users(for info: any UserInfo) async throws -> [any User] {
-        var users: [any User] = []
-
-        if let email = info.email {
-            if let user = try await store.users.find(byIdentifier: .email(email)) {
-                users.append(user)
-            }
+    /// Build redirect URL with exchange code as query parameter
+    private func buildRedirectURL(base: String, code: String) -> String {
+        if base.contains("?") {
+            return "\(base)&code=\(code)"
+        } else {
+            return "\(base)?code=\(code)"
         }
-
-        if let phone = info.phone {
-            if let user = try await store.users.find(byIdentifier: .phone(phone)) {
-                users.append(user)
-            }
-        }
-
-        return users
     }
-
 
 }

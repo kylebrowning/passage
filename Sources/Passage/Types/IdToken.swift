@@ -11,8 +11,8 @@ public struct IdToken: UserInfo, Sendable {
     let audience: AudienceClaim?
 
     // Passage claims
-    let email: String?
-    let phone: String?
+    public let email: String?
+    public let phone: String?
 }
 
 extension IdToken: JWTPayload {

@@ -1,3 +1,4 @@
+import Foundation
 import Vapor
 
 // MARK: - Federated Login Configuration
@@ -21,14 +22,44 @@ public extension Passage.Configuration {
 
             public enum Strategy: Sendable {
                 case disabled
-                case automatic(allowed: [Identifier.Kind])
+                case automatic(allowed: [Identifier.Kind], fallbackToManualOnMultipleMatches: Bool)
                 case manual(allowed: [Identifier.Kind])
             }
 
-            public let strategy: Strategy
+            public struct Routes: Sendable {
+                public let select: [PathComponent]
+                public let verify: [PathComponent]
 
-            public init(strategy: Strategy) {
+                public init(
+                    select: [PathComponent] = ["link", "select"],
+                    verify: [PathComponent] = ["link", "verify"]
+                ) {
+                    self.select = select
+                    self.verify = verify
+                }
+            }
+
+            public let strategy: Strategy
+            public let stateExpiration: TimeInterval
+            public let routes: Routes
+
+            public init(
+                strategy: Strategy,
+                stateExpiration: TimeInterval = 600,
+                routes: Routes = .init()
+            ) {
                 self.strategy = strategy
+                self.stateExpiration = stateExpiration
+                self.routes = routes
+            }
+
+            var enabled: Bool {
+                switch strategy {
+                case .disabled:
+                    return false
+                case .automatic, .manual:
+                    return true
+                }
             }
         }
 
@@ -61,18 +92,10 @@ public extension Passage.Configuration.FederatedLogin {
     func callbackPath(for provider: Passage.FederatedLogin.Provider) -> [PathComponent] {
         return routes.group + provider.routes.callback.path
     }
-}
-
-// MARK: - Account Linking Strategy Convenience Initializers
-
-public extension Passage.Configuration.FederatedLogin.AccountLinking.Strategy {
-
-    static func automatic(allowed identifiers: Identifier.Kind...) -> Self {
-        return .automatic(allowed: identifiers)
+    var linkSelectPath: [PathComponent] {
+        return routes.group + accountLinking.routes.select
     }
-
-    static func manual(allowed identifiers: Identifier.Kind...) -> Self {
-        return .manual(allowed: identifiers)
+    var linkVerifyPath: [PathComponent] {
+        return routes.group + accountLinking.routes.verify
     }
-
 }

@@ -93,8 +93,12 @@ struct StoreProtocolsTests {
             )
         }
 
-        func addIdentifier(to user: any User, identifier: Identifier, with credential: Credential?) async throws -> any User {
-            user
+        func addIdentifier(
+            _ identifier: Identifier,
+            to user: any User,
+            with credential: Credential?
+        ) async throws {
+            // Method signature test
         }
 
         func find(byId id: String) async throws -> (any User)? {
@@ -386,6 +390,61 @@ struct StoreProtocolsTests {
         #expect(store is MockMagicLinkTokenStore)
     }
 
+    // MARK: - ExchangeTokenStore Protocol Tests
+
+    struct MockExchangeToken: ExchangeToken {
+        typealias Id = UUID
+        typealias AssociatedUser = MockUser
+        var id: UUID?
+        var user: MockUser
+        var tokenHash: String
+        var expiresAt: Date
+        var consumedAt: Date?
+        var createdAt: Date?
+    }
+
+    struct MockExchangeTokenStore: Passage.ExchangeTokenStore {
+        @discardableResult
+        func createExchangeToken(
+            for user: any User,
+            tokenHash: String,
+            expiresAt: Date
+        ) async throws -> any ExchangeToken {
+            MockExchangeToken(
+                id: UUID(),
+                user: user as! MockUser,
+                tokenHash: tokenHash,
+                expiresAt: expiresAt,
+                consumedAt: nil,
+                createdAt: Date()
+            )
+        }
+
+        func find(exchangeTokenHash hash: String) async throws -> (any ExchangeToken)? {
+            nil
+        }
+
+        func consume(exchangeToken: any ExchangeToken) async throws {
+            // Method signature test
+        }
+
+        func cleanupExpiredTokens(before date: Date) async throws {
+            // Method signature test
+        }
+    }
+
+    @Test("ExchangeTokenStore protocol can be implemented")
+    func exchangeTokenStoreProtocolImplementation() {
+        let store: any Passage.ExchangeTokenStore = MockExchangeTokenStore()
+        #expect(store is MockExchangeTokenStore)
+    }
+
+    @Test("ExchangeTokenStore protocol conforms to Sendable")
+    func exchangeTokenStoreProtocolIsSendable() {
+        let store: any Sendable = MockExchangeTokenStore()
+        #expect(store is MockExchangeTokenStore)
+    }
+
     // MARK: - Store Protocol Tests
 
     struct MockStore: Passage.Store {
@@ -394,6 +453,7 @@ struct StoreProtocolsTests {
         var verificationCodes: any Passage.VerificationCodeStore { MockVerificationCodeStore() }
         var restorationCodes: any Passage.RestorationCodeStore { MockRestorationCodeStore() }
         var magicLinkTokens: any Passage.MagicLinkTokenStore { MockMagicLinkTokenStore() }
+        var exchangeTokens: any Passage.ExchangeTokenStore { MockExchangeTokenStore() }
     }
 
     @Test("Store protocol can be implemented")
@@ -417,5 +477,6 @@ struct StoreProtocolsTests {
         #expect(store.verificationCodes is MockVerificationCodeStore)
         #expect(store.restorationCodes is MockRestorationCodeStore)
         #expect(store.magicLinkTokens is MockMagicLinkTokenStore)
+        #expect(store.exchangeTokens is MockExchangeTokenStore)
     }
 }

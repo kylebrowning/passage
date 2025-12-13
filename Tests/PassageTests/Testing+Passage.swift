@@ -14,4 +14,5 @@ extension Tag {
     @Tag static var resetPassword: Self
     @Tag static var federatedLogin: Self
     @Tag static var passwordless: Self
+    @Tag static var exchangeCode: Self
 }

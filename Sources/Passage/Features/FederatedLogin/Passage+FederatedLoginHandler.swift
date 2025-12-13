@@ -19,17 +19,7 @@ extension Passage {
                 group: configuration.routes.group,
                 config: configuration.oauth,
             ) { (request, identity) in
-                let user = try await request.federated.login(
-                    identity: identity,
-                )
-
-                // Store tokens in session if using session auth
-                if request.hasSession {
-                    request.session.data["access_token"] = user.accessToken
-                    request.session.data["refresh_token"] = user.refreshToken
-                }
-
-                return request.redirect(to: configuration.oauth.redirectLocation)
+                return try await request.federated.login(identity: identity)
             }
         }
     }

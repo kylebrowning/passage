@@ -361,6 +361,136 @@ extension Passage.Views {
 
 }
 
+// MARK: - Account Link Select View Implementation
+
+extension Passage.Views {
+
+    func renderLinkAccountSelectView() async throws -> View {
+        guard let view = config.oauthLinkSelect else {
+            throw Abort(.notFound)
+        }
+        let state = try await request.linking.manual.loadLinkingState()
+        let params = OAuthLinkSelectViewContext(
+            provider: state.provider,
+            candidates: state.candidates.map {
+                .init(
+                    userId: $0.userId,
+                    maskedEmail: $0.email.map { maskEmail($0) },
+                    maskedPhone: $0.phone.map { maskPhone($0) }
+                )
+            },
+            error: nil
+        )
+        return try await request.view.render(
+            view.template,
+            Context(
+                theme: view.theme.resolve(for: .light),
+                params: params
+            )
+        )
+    }
+
+    func handleLinkAccountSelectFormSubmit(
+        of view: Passage.Configuration.Views.OAuthLinkSelectView,
+        at path: [PathComponent],
+    ) -> Response {
+        return redirect(
+            view: view,
+            at: path,
+            withSuccessMessage: nil,
+        )
+    }
+
+    func handleLinkAccountSelectFormFailure(
+        of view: Passage.Configuration.Views.OAuthLinkSelectView,
+        at path: [PathComponent],
+        with error: any Error,
+    ) -> Response {
+        return redirect(
+            view: view,
+            at: path,
+            withError: error,
+            withDefaultMessage: "An unknown error occurred during password reset request.",
+        )
+    }
+}
+
+// MARK: - Account Link Verify View Implementation
+
+extension Passage.Views {
+
+    func renderLinkAccountVerifyView() async throws -> View {
+        guard let view = config.oauthLinkVerify else {
+            throw Abort(.notFound)
+        }
+
+        let state = try await request.linking.manual.loadLinkingState()
+
+        guard let selectedUserId = state.selectedUserId else {
+            throw Abort(.badRequest, reason: "No user selected")
+        }
+
+        guard let candidate = state.candidates.first(where: { $0.userId == selectedUserId }) else {
+            throw Abort(.badRequest, reason: "Invalid user selection")
+        }
+
+        let params = OAuthLinkVerifyViewContext(
+            maskedEmail: candidate.email.map { maskEmail($0) },
+            hasPassword: candidate.hasPassword,
+            canUseEmailCode: !candidate.hasPassword && candidate.isEmailVerified,
+            error: nil
+        )
+
+        return try await request.view.render(
+            view.template,
+            Context(
+                theme: view.theme.resolve(for: .light),
+                params: params
+            )
+        )
+    }
+
+    func handleLinkAccountVerifyFormSubmit(
+        of view: Passage.Configuration.Views.OAuthLinkVerifyView,
+        at path: [PathComponent],
+    ) -> Response {
+        return request.redirect(to: request.configuration.oauth.redirectLocation)
+    }
+
+    func handleLinkAccountVerifyFormFailure(
+        of view: Passage.Configuration.Views.OAuthLinkVerifyView,
+        at path: [PathComponent],
+        with error: any Error,
+    ) -> Response {
+        return redirect(
+            view: view,
+            at: path,
+            withError: error,
+            withDefaultMessage: "An unknown error occurred during account linking.",
+        )
+    }
+}
+
+// MARK: - Masking Helpers
+
+extension Passage.Views {
+
+    func maskEmail(_ email: String) -> String {
+        let parts = email.split(separator: "@")
+        guard parts.count == 2 else { return email }
+        let local = String(parts[0])
+        let domain = String(parts[1])
+        let masked = local.prefix(1) + "***"
+        return "\(masked)@\(domain)"
+    }
+
+    func maskPhone(_ phone: String) -> String {
+        guard phone.count > 4 else { return "***" }
+        return "***" + phone.suffix(4)
+    }
+
+}
+
 // MARK: - Redirect Helpers
 
 fileprivate extension Passage.Views {
@@ -369,7 +499,7 @@ fileprivate extension Passage.Views {
         view: Passage.Configuration.Views.View,
         at path: [PathComponent],
         withParams params: [String: String?] = [:],
-        withSuccessMessage success: String,
+        withSuccessMessage success: String?,
     ) -> Response {
         guard let location = view.redirect.onSuccess else {
             return request.redirect(
@@ -428,14 +558,17 @@ extension Passage.Views {
     ) -> String {
         var components = URLComponents()
         components.path = "/\(path.string)"
-        components.queryItems = params.map { key, value in
-            URLQueryItem(name: key, value: value)
+        let queryItems = [
+            params,
+            ["success": success, "error": error],
+        ].flatMap {
+            $0.compactMap { key, value -> URLQueryItem? in
+                guard let value else { return nil }
+                return URLQueryItem(name: key, value: value)
+            }
         }
-        if let success {
-            components.queryItems?.append(URLQueryItem(name: "success", value: success))
-        }
-        if let error {
-            components.queryItems?.append(URLQueryItem(name: "error", value: error))
+        if queryItems.count > 0 {
+            components.queryItems = queryItems
         }
         return components.string ?? "/"
     }

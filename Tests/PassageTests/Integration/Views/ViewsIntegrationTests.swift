@@ -1522,4 +1522,637 @@ struct ViewsIntegrationTests {
             #expect(app.passage.storage.configuration.views.magicLinkVerify?.redirect.onSuccess == "/dashboard")
         }
     }
+
+    // MARK: - OAuth Link Account Select View Tests (lines 368-391)
+
+    /// Configures test app with OAuth linking and sessions enabled
+    @Sendable private func configureWithOAuthLinking(
+        _ app: Application,
+        viewsConfig: Passage.Configuration.Views,
+        captureRenderer: CapturingViewRenderer? = nil
+    ) async throws {
+        // Enable sessions middleware (required for linking state)
+        app.middleware.use(app.sessions.middleware)
+
+        // Use capturing renderer if provided
+        if let renderer = captureRenderer {
+            app.views.use { req in
+                renderer
+            }
+        }
+
+        // Add HMAC key for JWT
+        await app.jwt.keys.add(
+            hmac: HMACKey(from: "test-secret-key-for-jwt-signing"),
+            digestAlgorithm: .sha256,
+            kid: JWKIdentifier(string: "test-key")
+        )
+
+        // Configure Passage with test services
+        let store = Passage.OnlyForTest.InMemoryStore()
+        let emailDelivery = Passage.OnlyForTest.MockEmailDelivery()
+        let phoneDelivery = Passage.OnlyForTest.MockPhoneDelivery()
+
+        let services = Passage.Services(
+            store: store,
+            random: DefaultRandomGenerator(),
+            emailDelivery: emailDelivery,
+            phoneDelivery: phoneDelivery,
+            federatedLogin: nil
+        )
+
+        let emptyJwks = """
+        {"keys":[]}
+        """
+
+        let configuration = try Passage.Configuration(
+            origin: URL(string: "http://localhost:8080")!,
+            routes: .init(),
+            tokens: .init(
+                issuer: "test-issuer",
+                accessToken: .init(timeToLive: 3600),
+                refreshToken: .init(timeToLive: 86400)
+            ),
+            sessions: .init(enabled: true),
+            jwt: .init(jwks: .init(json: emptyJwks)),
+            verification: .init(
+                email: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
+                phone: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
+                useQueues: false
+            ),
+            restoration: .init(
+                email: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
+                phone: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
+                useQueues: false
+            ),
+            oauth: .init(
+                providers: [],
+                accountLinking: .init(
+                    strategy: .manual(allowed: [.email]),
+                    stateExpiration: 600
+                ),
+                redirectLocation: "/dashboard"
+            ),
+            views: viewsConfig
+        )
+
+        try await app.passage.configure(
+            services: services,
+            configuration: configuration
+        )
+
+        // Register test route to initiate linking session
+        app.post("test", "initiate-linking") { req async throws -> Response in
+            struct InitiateRequest: Content {
+                let provider: String
+                let userId: String
+                let verifiedEmails: [String]
+            }
+
+            let body = try req.content.decode(InitiateRequest.self)
+
+            let identity = FederatedIdentity(
+                identifier: .federated(body.provider, userId: body.userId),
+                provider: body.provider,
+                verifiedEmails: body.verifiedEmails,
+                verifiedPhoneNumbers: [],
+                displayName: nil,
+                profilePictureURL: nil
+            )
+
+            _ = try await req.linking.manual.initiate(
+                for: identity,
+                withAllowedIdentifiers: [.email]
+            )
+
+            return Response(status: .ok)
+        }
+
+        // Register test route to advance linking (select user)
+        app.post("test", "advance-linking") { req async throws -> Response in
+            struct AdvanceRequest: Content {
+                let userId: String
+            }
+
+            let body = try req.content.decode(AdvanceRequest.self)
+            try await req.linking.manual.advance(withSelectedUserId: body.userId)
+
+            return Response(status: .ok)
+        }
+    }
+
+    /// Creates a test user with the given identifier
+    @Sendable private func createTestUserForOAuth(
+        app: Application,
+        email: String,
+        password: String? = nil,
+        isEmailVerified: Bool = false
+    ) async throws -> any User {
+        let store = app.passage.storage.services.store
+
+        let identifier = Identifier.email(email)
+
+        var credential: Credential? = nil
+        if let password = password {
+            let passwordHash = try await app.password.async.hash(password)
+            credential = .password(passwordHash)
+        }
+
+        let user = try await store.users.create(identifier: identifier, with: credential)
+
+        if isEmailVerified {
+            try await store.users.markEmailVerified(for: user)
+        }
+
+        return user
+    }
+
+    /// Extracts session cookie from response headers
+    private func extractSessionCookie(from response: TestingHTTPResponse) -> String? {
+        if let cookieHeader = response.headers[.setCookie].first(where: { $0.contains("vapor-session") }) {
+            let parts = cookieHeader.split(separator: ";")
+            if let cookiePart = parts.first {
+                return String(cookiePart)
+            }
+        }
+        return nil
+    }
+
+    @Test("OAuth link select view returns 404 when not configured")
+    func oauthLinkSelectViewNotConfigured() async throws {
+        let viewsConfig = Passage.Configuration.Views()
+
+        try await withApp(configure: { app in
+            try await configureWithOAuthLinking(app, viewsConfig: viewsConfig)
+        }) { app in
+            try await app.testing().test(.GET, "/auth/oauth/link/select", afterResponse: { res in
+                #expect(res.status == .notFound)
+            })
+        }
+    }
+
+    @Test("OAuth link select view returns error when no linking session exists")
+    func oauthLinkSelectViewNoSession() async throws {
+        let theme = Passage.Views.Theme(colors: .defaultLight)
+        let viewsConfig = Passage.Configuration.Views(
+            oauthLinkSelect: .init(style: .minimalism, theme: theme),
+            oauthLinkVerify: .init(style: .minimalism, theme: theme)
+        )
+
+        try await withApp { app in
+            try await configureWithOAuthLinking(app, viewsConfig: viewsConfig)
+
+            try await app.testing().test(.GET, "/auth/oauth/link/select", afterResponse: { res in
+                // Should return bad request because no linking session exists
+                #expect(res.status == .badRequest)
+            })
+        }
+    }
+
+    @Test("OAuth link select view renders with valid session and candidates")
+    func oauthLinkSelectViewRendersWithCandidates() async throws {
+        let theme = Passage.Views.Theme(colors: .defaultLight)
+        let viewsConfig = Passage.Configuration.Views(
+            oauthLinkSelect: .init(style: .minimalism, theme: theme),
+            oauthLinkVerify: .init(style: .minimalism, theme: theme)
+        )
+
+        try await withApp { app in
+            let renderer = CapturingViewRenderer(eventLoop: app.eventLoopGroup.any())
+            try await configureWithOAuthLinking(app, viewsConfig: viewsConfig, captureRenderer: renderer)
+
+            // Create candidate user
+            _ = try await createTestUserForOAuth(
+                app: app,
+                email: "candidate@example.com",
+                password: "password123",
+                isEmailVerified: true
+            )
+
+            var sessionCookie: String?
+
+            // Initiate linking session
+            try await app.testing().test(
+                .POST, "test/initiate-linking",
+                beforeRequest: { req in
+                    struct InitiateRequest: Content {
+                        let provider: String
+                        let userId: String
+                        let verifiedEmails: [String]
+                    }
+                    try req.content.encode(InitiateRequest(
+                        provider: "google",
+                        userId: "oauth-123",
+                        verifiedEmails: ["candidate@example.com"]
+                    ))
+                },
+                afterResponse: { res in
+                    #expect(res.status == .ok)
+                    sessionCookie = extractSessionCookie(from: res)
+                }
+            )
+
+            #expect(sessionCookie != nil)
+
+            // GET the link select view with session
+            try await app.testing().test(
+                .GET, "/auth/oauth/link/select",
+                beforeRequest: { req in
+                    if let cookie = sessionCookie {
+                        req.headers.add(name: .cookie, value: cookie)
+                    }
+                },
+                afterResponse: { res in
+                    #expect(res.status == .ok)
+
+                    // Verify correct template was requested
+                    #expect(renderer.templatePath == "oauth-link-select-minimalism")
+
+                    // Verify context was passed with candidates
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.OAuthLinkSelectViewContext>
+                    #expect(ctx?.params.provider == "google")
+                    #expect(ctx?.params.candidates.count == 1)
+                    #expect(ctx?.params.candidates.first?.maskedEmail != nil)
+                    #expect(ctx?.params.error == nil)
+                }
+            )
+        }
+    }
+
+    @Test("OAuth link select view renders with multiple candidates")
+    func oauthLinkSelectViewRendersWithMultipleCandidates() async throws {
+        let theme = Passage.Views.Theme(colors: .oceanLight)
+        let viewsConfig = Passage.Configuration.Views(
+            oauthLinkSelect: .init(style: .neobrutalism, theme: theme),
+            oauthLinkVerify: .init(style: .neobrutalism, theme: theme)
+        )
+
+        try await withApp { app in
+            let renderer = CapturingViewRenderer(eventLoop: app.eventLoopGroup.any())
+            try await configureWithOAuthLinking(app, viewsConfig: viewsConfig, captureRenderer: renderer)
+
+            // Create multiple candidate users
+            _ = try await createTestUserForOAuth(
+                app: app,
+                email: "user1@example.com",
+                password: "password123",
+                isEmailVerified: true
+            )
+            _ = try await createTestUserForOAuth(
+                app: app,
+                email: "user2@example.com",
+                password: "password456",
+                isEmailVerified: true
+            )
+
+            var sessionCookie: String?
+
+            // Initiate linking session with multiple verified emails
+            try await app.testing().test(
+                .POST, "test/initiate-linking",
+                beforeRequest: { req in
+                    struct InitiateRequest: Content {
+                        let provider: String
+                        let userId: String
+                        let verifiedEmails: [String]
+                    }
+                    try req.content.encode(InitiateRequest(
+                        provider: "github",
+                        userId: "oauth-456",
+                        verifiedEmails: ["user1@example.com", "user2@example.com"]
+                    ))
+                },
+                afterResponse: { res in
+                    #expect(res.status == .ok)
+                    sessionCookie = extractSessionCookie(from: res)
+                }
+            )
+
+            #expect(sessionCookie != nil)
+
+            // GET the link select view
+            try await app.testing().test(
+                .GET, "/auth/oauth/link/select",
+                beforeRequest: { req in
+                    if let cookie = sessionCookie {
+                        req.headers.add(name: .cookie, value: cookie)
+                    }
+                },
+                afterResponse: { res in
+                    #expect(res.status == .ok)
+                    #expect(renderer.templatePath == "oauth-link-select-neobrutalism")
+
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.OAuthLinkSelectViewContext>
+                    #expect(ctx?.params.provider == "github")
+                    #expect(ctx?.params.candidates.count == 2)
+                }
+            )
+        }
+    }
+
+    // MARK: - OAuth Link Account Verify View Tests (lines 422-451)
+
+    @Test("OAuth link verify view returns 404 when not configured")
+    func oauthLinkVerifyViewNotConfigured() async throws {
+        let viewsConfig = Passage.Configuration.Views()
+
+        try await withApp(configure: { app in
+            try await configureWithOAuthLinking(app, viewsConfig: viewsConfig)
+        }) { app in
+            try await app.testing().test(.GET, "/auth/oauth/link/verify", afterResponse: { res in
+                #expect(res.status == .notFound)
+            })
+        }
+    }
+
+    @Test("OAuth link verify view returns error when no linking session exists")
+    func oauthLinkVerifyViewNoSession() async throws {
+        let theme = Passage.Views.Theme(colors: .defaultLight)
+        let viewsConfig = Passage.Configuration.Views(
+            oauthLinkSelect: .init(style: .minimalism, theme: theme),
+            oauthLinkVerify: .init(style: .minimalism, theme: theme)
+        )
+
+        try await withApp { app in
+            try await configureWithOAuthLinking(app, viewsConfig: viewsConfig)
+
+            try await app.testing().test(.GET, "/auth/oauth/link/verify", afterResponse: { res in
+                // Should return bad request because no linking session exists
+                #expect(res.status == .badRequest)
+            })
+        }
+    }
+
+    @Test("OAuth link verify view returns bad request when no user selected")
+    func oauthLinkVerifyViewNoUserSelected() async throws {
+        let theme = Passage.Views.Theme(colors: .defaultLight)
+        let viewsConfig = Passage.Configuration.Views(
+            oauthLinkSelect: .init(style: .minimalism, theme: theme),
+            oauthLinkVerify: .init(style: .minimalism, theme: theme)
+        )
+
+        try await withApp { app in
+            try await configureWithOAuthLinking(app, viewsConfig: viewsConfig)
+
+            // Create candidate user
+            _ = try await createTestUserForOAuth(
+                app: app,
+                email: "candidate@example.com",
+                password: "password123",
+                isEmailVerified: true
+            )
+
+            var sessionCookie: String?
+
+            // Initiate linking session (but don't advance/select user)
+            try await app.testing().test(
+                .POST, "test/initiate-linking",
+                beforeRequest: { req in
+                    struct InitiateRequest: Content {
+                        let provider: String
+                        let userId: String
+                        let verifiedEmails: [String]
+                    }
+                    try req.content.encode(InitiateRequest(
+                        provider: "google",
+                        userId: "oauth-789",
+                        verifiedEmails: ["candidate@example.com"]
+                    ))
+                },
+                afterResponse: { res in
+                    #expect(res.status == .ok)
+                    sessionCookie = extractSessionCookie(from: res)
+                }
+            )
+
+            #expect(sessionCookie != nil)
+
+            // Try to access verify view without selecting a user
+            try await app.testing().test(
+                .GET, "/auth/oauth/link/verify",
+                beforeRequest: { req in
+                    if let cookie = sessionCookie {
+                        req.headers.add(name: .cookie, value: cookie)
+                    }
+                },
+                afterResponse: { res in
+                    // Should return bad request because no user has been selected
+                    #expect(res.status == .badRequest)
+                }
+            )
+        }
+    }
+
+    @Test("OAuth link verify view renders with valid session and selected user with password")
+    func oauthLinkVerifyViewRendersWithPasswordUser() async throws {
+        let theme = Passage.Views.Theme(colors: .defaultLight)
+        let viewsConfig = Passage.Configuration.Views(
+            oauthLinkSelect: .init(style: .minimalism, theme: theme),
+            oauthLinkVerify: .init(style: .minimalism, theme: theme)
+        )
+
+        try await withApp { app in
+            let renderer = CapturingViewRenderer(eventLoop: app.eventLoopGroup.any())
+            try await configureWithOAuthLinking(app, viewsConfig: viewsConfig, captureRenderer: renderer)
+
+            // Create candidate user with password
+            let user = try await createTestUserForOAuth(
+                app: app,
+                email: "password-user@example.com",
+                password: "securepassword",
+                isEmailVerified: true
+            )
+            let userId = user.id!.description
+
+            var sessionCookie: String?
+
+            // Initiate linking session
+            try await app.testing().test(
+                .POST, "test/initiate-linking",
+                beforeRequest: { req in
+                    struct InitiateRequest: Content {
+                        let provider: String
+                        let userId: String
+                        let verifiedEmails: [String]
+                    }
+                    try req.content.encode(InitiateRequest(
+                        provider: "google",
+                        userId: "oauth-pw-test",
+                        verifiedEmails: ["password-user@example.com"]
+                    ))
+                },
+                afterResponse: { res in
+                    #expect(res.status == .ok)
+                    sessionCookie = extractSessionCookie(from: res)
+                }
+            )
+
+            #expect(sessionCookie != nil)
+
+            // Advance linking (select user)
+            try await app.testing().test(
+                .POST, "test/advance-linking",
+                beforeRequest: { req in
+                    if let cookie = sessionCookie {
+                        req.headers.add(name: .cookie, value: cookie)
+                    }
+                    struct AdvanceRequest: Content {
+                        let userId: String
+                    }
+                    try req.content.encode(AdvanceRequest(userId: userId))
+                },
+                afterResponse: { res in
+                    #expect(res.status == .ok)
+                    // Update session cookie if new one was set
+                    if let newCookie = extractSessionCookie(from: res) {
+                        sessionCookie = newCookie
+                    }
+                }
+            )
+
+            // GET the link verify view
+            try await app.testing().test(
+                .GET, "/auth/oauth/link/verify",
+                beforeRequest: { req in
+                    if let cookie = sessionCookie {
+                        req.headers.add(name: .cookie, value: cookie)
+                    }
+                },
+                afterResponse: { res in
+                    #expect(res.status == .ok)
+
+                    // Verify correct template was requested
+                    #expect(renderer.templatePath == "oauth-link-verify-minimalism")
+
+                    // Verify context was passed correctly
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.OAuthLinkVerifyViewContext>
+                    #expect(ctx?.params.maskedEmail != nil)
+                    #expect(ctx?.params.hasPassword == true)
+                    #expect(ctx?.params.canUseEmailCode == false)  // Has password, so can't use email code
+                    #expect(ctx?.params.error == nil)
+                }
+            )
+        }
+    }
+
+    @Test("OAuth link verify view renders with user who can use email code")
+    func oauthLinkVerifyViewRendersWithEmailCodeUser() async throws {
+        let theme = Passage.Views.Theme(colors: .forestLight)
+        let viewsConfig = Passage.Configuration.Views(
+            oauthLinkSelect: .init(style: .material, theme: theme),
+            oauthLinkVerify: .init(style: .material, theme: theme)
+        )
+
+        try await withApp { app in
+            let renderer = CapturingViewRenderer(eventLoop: app.eventLoopGroup.any())
+            try await configureWithOAuthLinking(app, viewsConfig: viewsConfig, captureRenderer: renderer)
+
+            // Create candidate user WITHOUT password but with verified email
+            let user = try await createTestUserForOAuth(
+                app: app,
+                email: "no-password@example.com",
+                password: nil,  // No password
+                isEmailVerified: true  // But email is verified
+            )
+            let userId = user.id!.description
+
+            var sessionCookie: String?
+
+            // Initiate linking session
+            try await app.testing().test(
+                .POST, "test/initiate-linking",
+                beforeRequest: { req in
+                    struct InitiateRequest: Content {
+                        let provider: String
+                        let userId: String
+                        let verifiedEmails: [String]
+                    }
+                    try req.content.encode(InitiateRequest(
+                        provider: "google",
+                        userId: "oauth-email-code",
+                        verifiedEmails: ["no-password@example.com"]
+                    ))
+                },
+                afterResponse: { res in
+                    #expect(res.status == .ok)
+                    sessionCookie = extractSessionCookie(from: res)
+                }
+            )
+
+            #expect(sessionCookie != nil)
+
+            // Advance linking (select user)
+            try await app.testing().test(
+                .POST, "test/advance-linking",
+                beforeRequest: { req in
+                    if let cookie = sessionCookie {
+                        req.headers.add(name: .cookie, value: cookie)
+                    }
+                    struct AdvanceRequest: Content {
+                        let userId: String
+                    }
+                    try req.content.encode(AdvanceRequest(userId: userId))
+                },
+                afterResponse: { res in
+                    #expect(res.status == .ok)
+                    if let newCookie = extractSessionCookie(from: res) {
+                        sessionCookie = newCookie
+                    }
+                }
+            )
+
+            // GET the link verify view
+            try await app.testing().test(
+                .GET, "/auth/oauth/link/verify",
+                beforeRequest: { req in
+                    if let cookie = sessionCookie {
+                        req.headers.add(name: .cookie, value: cookie)
+                    }
+                },
+                afterResponse: { res in
+                    #expect(res.status == .ok)
+
+                    // Verify correct template was requested
+                    #expect(renderer.templatePath == "oauth-link-verify-material")
+
+                    // Verify context shows canUseEmailCode is true
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.OAuthLinkVerifyViewContext>
+                    #expect(ctx?.params.maskedEmail != nil)
+                    #expect(ctx?.params.hasPassword == false)
+                    #expect(ctx?.params.canUseEmailCode == true)  // No password + verified email = can use code
+                    #expect(ctx?.params.error == nil)
+                }
+            )
+        }
+    }
+
+    @Test("OAuth link select and verify views configuration integration")
+    func oauthLinkViewsConfigurationIntegration() async throws {
+        let theme = Passage.Views.Theme(colors: .defaultLight)
+        let linkSelectView = Passage.Configuration.Views.OAuthLinkSelectView(
+            style: .minimalism,
+            theme: theme
+        )
+        let linkVerifyView = Passage.Configuration.Views.OAuthLinkVerifyView(
+            style: .neobrutalism,
+            theme: Passage.Views.Theme(colors: .oceanLight)
+        )
+
+        let viewsConfig = Passage.Configuration.Views(
+            oauthLinkSelect: linkSelectView,
+            oauthLinkVerify: linkVerifyView
+        )
+
+        #expect(viewsConfig.enabled == true)
+        #expect(viewsConfig.oauthLinkSelect != nil)
+        #expect(viewsConfig.oauthLinkVerify != nil)
+
+        try await withApp(configure: { app in
+            try await configureWithOAuthLinking(app, viewsConfig: viewsConfig)
+        }) { app in
+            #expect(app.passage.storage.configuration.views.enabled == true)
+            #expect(app.passage.storage.configuration.views.oauthLinkSelect?.style == .minimalism)
+            #expect(app.passage.storage.configuration.views.oauthLinkVerify?.style == .neobrutalism)
+        }
+    }
 }

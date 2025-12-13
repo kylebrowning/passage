@@ -41,9 +41,7 @@ struct ServicesTests {
                 isPhoneVerified: false
             )
         }
-        func addIdentifier(to user: any User, identifier: Identifier, with credential: Credential?) async throws -> any User {
-            user
-        }
+        func addIdentifier(_ identifier: Identifier, to user: any User, with credential: Credential?) async throws {}
         func find(byId id: String) async throws -> (any User)? { nil }
         func find(byIdentifier identifier: Identifier) async throws -> (any User)? { nil }
         func markEmailVerified(for user: any User) async throws {}
@@ -99,12 +97,20 @@ struct ServicesTests {
         func incrementFailedAttempts(for magicLink: any MagicLinkToken) async throws {}
     }
 
+    struct MockExchangeTokenStore: Passage.ExchangeTokenStore {
+        func createExchangeToken(for user: any User, tokenHash: String, expiresAt: Date) async throws -> any ExchangeToken { fatalError() }
+        func find(exchangeTokenHash hash: String) async throws -> (any ExchangeToken)? { nil }
+        func consume(exchangeToken: any ExchangeToken) async throws {}
+        func cleanupExpiredTokens(before date: Date) async throws {}
+    }
+
     struct MockStore: Passage.Store {
         var users: any Passage.UserStore { MockUserStore() }
         var tokens: any Passage.TokenStore { MockTokenStore() }
         var verificationCodes: any Passage.VerificationCodeStore { MockVerificationCodeStore() }
         var restorationCodes: any Passage.RestorationCodeStore { MockRestorationCodeStore() }
         var magicLinkTokens: any Passage.MagicLinkTokenStore { MockMagicLinkTokenStore() }
+        var exchangeTokens: any Passage.ExchangeTokenStore { MockExchangeTokenStore() }
     }
 
     struct MockEmailDelivery: Passage.EmailDelivery {

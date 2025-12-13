@@ -145,6 +145,15 @@ extension Passage.OnlyForTest {
         var expiresAt: Date
         var failedAttempts: Int
     }
+
+    struct InMemoryExchangeToken: ExchangeToken, @unchecked Sendable {
+        var id: String?
+        var user: InMemoryUser
+        var tokenHash: String
+        var expiresAt: Date
+        var consumedAt: Date?
+        var createdAt: Date?
+    }
 }
 
 // MARK: - InMemoryUserStore
@@ -162,8 +171,13 @@ public extension Passage.OnlyForTest.InMemoryStore {
             identifier: Identifier,
             with credential: Credential?
         ) async throws -> any User {
+            // Build the identifier key - federated identifiers include provider
+            let identifierKey = identifier.kind == .federated
+                ? "\(identifier.provider ?? ""):\(identifier.value)"
+                : identifier.value
+
             // Check for duplicate identifier
-            if identifierIndex[identifier.value] != nil {
+            if identifierIndex[identifierKey] != nil {
                 throw identifier.errorWhenIdentifierAlreadyRegistered
             }
 
@@ -179,7 +193,7 @@ public extension Passage.OnlyForTest.InMemoryStore {
                 isPhoneVerified: false
             )
             users[userId] = user
-            identifierIndex[identifier.value] = userId
+            identifierIndex[identifierKey] = userId
 
             return user
         }
@@ -189,7 +203,12 @@ public extension Passage.OnlyForTest.InMemoryStore {
         }
 
         public func find(byIdentifier identifier: Identifier) async throws -> (any User)? {
-            guard let userId = identifierIndex[identifier.value] else {
+            // Build the same key format as addIdentifier for consistency
+            let identifierKey = identifier.kind == .federated
+                ? "\(identifier.provider ?? ""):\(identifier.value)"
+                : identifier.value
+
+            guard let userId = identifierIndex[identifierKey] else {
                 return nil
             }
             return users[userId]
@@ -210,12 +229,11 @@ public extension Passage.OnlyForTest.InMemoryStore {
             users[userId]?.passwordHash = passwordHash
         }
 
-        @discardableResult
         public func addIdentifier(
+            _ identifier: Identifier,
             to user: any User,
-            identifier: Identifier,
             with credential: Credential?
-        ) async throws -> any User {
+        ) async throws {
             guard let userId = user.id?.description else {
                 throw PassageError.unexpected(message: "User ID is missing")
             }
@@ -253,7 +271,6 @@ public extension Passage.OnlyForTest.InMemoryStore {
             // Store updated user back in dictionary
             users[userId] = existingUser
             identifierIndex[identifierKey] = userId
-            return existingUser
         }
 
         public func createWithEmail(_ email: String, verified: Bool) async throws -> any User {
@@ -629,6 +646,62 @@ public extension Passage.OnlyForTest.InMemoryStore {
 
         public func incrementFailedAttempts(for magicLink: any MagicLinkToken) async throws {
             emailMagicLinks[magicLink.tokenHash]?.failedAttempts += 1
+        }
+    }
+
+}
+
+// MARK: - InMemoryExchangeTokenStore
+
+public extension Passage.OnlyForTest.InMemoryStore {
+
+    final class InMemoryExchangeTokenStore: Passage.ExchangeTokenStore, @unchecked Sendable {
+
+        private var tokens: [String: Passage.OnlyForTest.InMemoryExchangeToken] = [:]
+
+        @discardableResult
+        public func createExchangeToken(
+            for user: any User,
+            tokenHash: String,
+            expiresAt: Date
+        ) async throws -> any ExchangeToken {
+            guard let userId = user.id?.description else {
+                throw PassageError.unexpected(message: "User ID is missing")
+            }
+
+            let tokenId = UUID().uuidString
+            let inMemoryUser = Passage.OnlyForTest.InMemoryUser(
+                id: userId,
+                email: user.email,
+                phone: user.phone,
+                username: user.username,
+                passwordHash: user.passwordHash,
+                isAnonymous: user.isAnonymous,
+                isEmailVerified: user.isEmailVerified,
+                isPhoneVerified: user.isPhoneVerified
+            )
+            let token = Passage.OnlyForTest.InMemoryExchangeToken(
+                id: tokenId,
+                user: inMemoryUser,
+                tokenHash: tokenHash,
+                expiresAt: expiresAt,
+                consumedAt: nil,
+                createdAt: Date()
+            )
+            tokens[tokenHash] = token
+            return token
+        }
+
+        public func find(exchangeTokenHash hash: String) async throws -> (any ExchangeToken)? {
+            return tokens[hash]
+        }
+
+        public func consume(exchangeToken: any ExchangeToken) async throws {
+            tokens[exchangeToken.tokenHash]?.consumedAt = Date()
+        }
+
+        public func cleanupExpiredTokens(before date: Date) async throws {
+            tokens = tokens.filter { $0.value.expiresAt >= date }
         }
     }
 

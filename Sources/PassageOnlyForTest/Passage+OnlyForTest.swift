@@ -10,6 +10,7 @@ public extension Passage {
             public let verificationCodes: any Passage.VerificationCodeStore
             public let restorationCodes: any Passage.RestorationCodeStore
             public let magicLinkTokens: any Passage.MagicLinkTokenStore
+            public let exchangeTokens: any Passage.ExchangeTokenStore
 
             public init() {
                 self.users = InMemoryUserStore()
@@ -17,6 +18,7 @@ public extension Passage {
                 self.verificationCodes = InMemoryVerificationStore()
                 self.restorationCodes = InMemoryRestorationStore()
                 self.magicLinkTokens = InMemoryMagicLinkTokenStore()
+                self.exchangeTokens = InMemoryExchangeTokenStore()
             }
         }
 
