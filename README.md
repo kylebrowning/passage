@@ -1,4 +1,8 @@
 # Passage
+[![Release](https://img.shields.io/github/v/release/vapor-community/passage)](https://github.com/vapor-community/passage/releases)
+[![Swift 6.2](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
+[![License](https://img.shields.io/github/license/vapor-community/passage)](LICENSE)
+[![codecov](https://codecov.io/gh/vapor-community/passage/branch/main/graph/badge.svg)](https://codecov.io/gh/vapor-community/passage)
 
 A comprehensive identity management and authentication framework for Vapor applications built with Swift. Passage provides secure authentication with minimal configuration while remaining highly extensible through protocol-based architecture. **Not yet production-ready.**
 
@@ -30,7 +34,7 @@ Add Passage to your `Package.swift`:
 ```swift
 dependencies: [
     // 🛂 Authentication and user management for Vapor.
-    .package(url: "https://github.com/rozd/passage", branch: "main"),
+    .package(url: "https://github.com/vapor-community/passage", branch: "main"),
 ]
 ```
 

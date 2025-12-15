@@ -1,0 +1,285 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - '*'
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-archive:
+    runs-on: macos-26
+    outputs:
+      archive-name: ${{ steps.archive.outputs.archive-name }}
+      version: ${{ steps.get-version.outputs.version }}
+      is-main: ${{ steps.check-branch.outputs.is-main }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.2'
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build/checkouts
+            .build/repositories
+          key: ${{ runner.os }}-swift-6.2-spm-${{ hashFiles('Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-swift-6.2-spm-
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test --enable-code-coverage
+
+      - name: Generate coverage report
+        id: coverage
+        run: |
+          PROFDATA=$(find .build -name "default.profdata" -type f | head -1)
+          XCTEST_BUNDLE=$(find .build -name "*.xctest" -type d | head -1)
+          if [ -n "$XCTEST_BUNDLE" ]; then
+            TEST_BINARY="$XCTEST_BUNDLE/Contents/MacOS/passagePackageTests"
+          fi
+          if [ -z "$TEST_BINARY" ] || [ ! -f "$TEST_BINARY" ]; then
+            TEST_BINARY=$(find .build -name "passagePackageTests" -type f -perm +111 | head -1)
+          fi
+
+          echo "PROFDATA: $PROFDATA"
+          echo "TEST_BINARY: $TEST_BINARY"
+
+          if [ -n "$PROFDATA" ] && [ -n "$TEST_BINARY" ] && [ -f "$TEST_BINARY" ]; then
+            xcrun llvm-cov report "$TEST_BINARY" -instr-profile="$PROFDATA" \
+              --ignore-filename-regex=".build|Tests" > coverage.txt
+            COVERAGE=$(tail -1 coverage.txt | awk '{print $10}' | sed 's/%//')
+            echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+            echo "Coverage: $COVERAGE%"
+            cat coverage.txt
+          else
+            echo "coverage=0" >> $GITHUB_OUTPUT
+            echo "Could not find coverage data"
+          fi
+
+      - name: Export coverage to lcov
+        run: |
+          PROFDATA=$(find .build -name "default.profdata" -type f | head -1)
+          XCTEST_BUNDLE=$(find .build -name "*.xctest" -type d | head -1)
+          if [ -n "$XCTEST_BUNDLE" ]; then
+            TEST_BINARY="$XCTEST_BUNDLE/Contents/MacOS/passagePackageTests"
+          fi
+          if [ -z "$TEST_BINARY" ] || [ ! -f "$TEST_BINARY" ]; then
+            TEST_BINARY=$(find .build -name "passagePackageTests" -type f -perm +111 | head -1)
+          fi
+
+          if [ -n "$PROFDATA" ] && [ -n "$TEST_BINARY" ]; then
+            xcrun llvm-cov export "$TEST_BINARY" \
+              -instr-profile="$PROFDATA" \
+              -format=lcov \
+              --ignore-filename-regex=".build|Tests" > coverage.lcov
+          fi
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.lcov
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Check if main branch
+        id: check-branch
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "is-main=true" >> $GITHUB_OUTPUT
+          else
+            echo "is-main=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get version from tags
+        id: get-version
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+          LATEST_TAG="${LATEST_TAG#v}"
+          echo "Latest tag: $LATEST_TAG"
+          echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Create archive (intermediate releases only)
+        id: archive
+        if: steps.check-branch.outputs.is-main == 'false'
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          BRANCH_NAME=$(echo "${{ github.ref }}" | sed 's|refs/heads/||' | sed 's|/|-|g')
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          ARCHIVE_NAME="passage-${VERSION}-${BRANCH_NAME}-${SHORT_SHA}.zip"
+
+          zip -r "${ARCHIVE_NAME}" Sources Package.swift Package.resolved README.md LICENSE 2>/dev/null || \
+          zip -r "${ARCHIVE_NAME}" Sources Package.swift Package.resolved
+
+          echo "archive-name=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
+          echo "Created archive: $ARCHIVE_NAME"
+          ls -la "${ARCHIVE_NAME}"
+
+      - name: Upload archive artifact
+        if: steps.check-branch.outputs.is-main == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-archive
+          path: ${{ steps.archive.outputs.archive-name }}
+          retention-days: 7
+
+  intermediate-release:
+    runs-on: ubuntu-latest
+    needs: build-test-archive
+    if: needs.build-test-archive.outputs.is-main == 'false'
+    steps:
+      - name: Download archive
+        uses: actions/download-artifact@v4
+        with:
+          name: release-archive
+
+      - name: List artifacts
+        run: |
+          echo "Intermediate release artifact:"
+          ls -la
+
+  calculate-version:
+    runs-on: ubuntu-latest
+    needs: build-test-archive
+    if: needs.build-test-archive.outputs.is-main == 'true'
+    outputs:
+      version: ${{ steps.calculate.outputs.version }}
+      previous-tag: ${{ steps.calculate.outputs.previous-tag }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate next version
+        id: calculate
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+          LATEST_TAG="${LATEST_TAG#v}"
+
+          echo "Latest tag: $LATEST_TAG"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_TAG"
+
+          BUMP_TYPE="patch"
+
+          # Get commit messages since last tag
+          if git rev-parse "${LATEST_TAG}" >/dev/null 2>&1; then
+            COMMITS=$(git log "${LATEST_TAG}..HEAD" --pretty=format:"%s%n%b" 2>/dev/null || echo "")
+          else
+            COMMITS=$(git log --pretty=format:"%s%n%b" 2>/dev/null || echo "")
+          fi
+
+          # Check for breaking changes (highest priority)
+          if echo "$COMMITS" | grep -qiE "BREAKING CHANGE"; then
+            BUMP_TYPE="major"
+          # Check for features
+          elif echo "$COMMITS" | grep -qE "^feat(\(.+\))?:"; then
+            BUMP_TYPE="minor"
+          fi
+
+          # Calculate new version
+          case "$BUMP_TYPE" in
+            major)
+              NEW_VERSION="$((MAJOR + 1)).0.0"
+              ;;
+            minor)
+              NEW_VERSION="${MAJOR}.$((MINOR + 1)).0"
+              ;;
+            patch)
+              NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+              ;;
+          esac
+
+          echo "Bump type: $BUMP_TYPE"
+          echo "New version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "previous-tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREVIOUS_TAG="${{ steps.calculate.outputs.previous-tag }}"
+
+          {
+            echo "## What's Changed"
+            echo ""
+            if git rev-parse "${PREVIOUS_TAG}" >/dev/null 2>&1; then
+              git log "${PREVIOUS_TAG}..HEAD" --pretty=format:"* %s"
+            else
+              git log --pretty=format:"* %s"
+            fi
+          } > CHANGELOG.md
+
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  public-release:
+    runs-on: ubuntu-latest
+    needs: [build-test-archive, calculate-version]
+    if: needs.build-test-archive.outputs.is-main == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create and push tag
+        run: |
+          VERSION="${{ needs.calculate-version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${VERSION}" -m "Release ${VERSION}"
+          git push origin "${VERSION}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.calculate-version.outputs.version }}"
+          PREVIOUS_TAG="${{ needs.calculate-version.outputs.previous-tag }}"
+
+          BODY="${{ needs.calculate-version.outputs.changelog }}
+
+          **Full Changelog**: https://github.com/vapor-community/passage/compare/${PREVIOUS_TAG}...${VERSION}"
+
+          gh release create "${VERSION}" \
+            --title "Release ${VERSION}" \
+            --notes "$BODY"
+
+  create-bug-issue:
+    runs-on: ubuntu-latest
+    needs: build-test-archive
+    if: failure() && needs.build-test-archive.outputs.is-main == 'true'
+    steps:
+      - name: Create Bug Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[Bug] Build/Test failed on main branch`,
+              body: `## Build Failure on Main Branch\n\nThe build or tests failed on the main branch.\n\n**Workflow Run:** ${runUrl}\n\n**Commit:** ${context.sha}\n\nPlease investigate and fix the issue.`,
+              labels: ['bug']
+            });
