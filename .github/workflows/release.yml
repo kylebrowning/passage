@@ -258,6 +258,30 @@ jobs:
             --title "Release ${VERSION}" \
             --notes-file RELEASE_NOTES.md
 
+      - name: Notify passage-fluent
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DEPENDENT_REPOS_PAT }}
+          repository: rozd/passage-fluent
+          event-type: passage-release
+          client-payload: '{"version": "${{ needs.calculate-version.outputs.version }}"}'
+
+      - name: Notify passage-mailgun
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DEPENDENT_REPOS_PAT }}
+          repository: rozd/passage-mailgun
+          event-type: passage-release
+          client-payload: '{"version": "${{ needs.calculate-version.outputs.version }}"}'
+
+      - name: Notify passage-imperial
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DEPENDENT_REPOS_PAT }}
+          repository: rozd/passage-imperial
+          event-type: passage-release
+          client-payload: '{"version": "${{ needs.calculate-version.outputs.version }}"}'
+
   create-bug-issue:
     runs-on: ubuntu-latest
     needs: build-test-archive
