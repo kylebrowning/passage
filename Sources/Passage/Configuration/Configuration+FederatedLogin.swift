@@ -6,72 +6,15 @@ import Vapor
 public extension Passage.Configuration {
 
     struct FederatedLogin: Sendable {
-        public struct Routes: Sendable {
-            let group: [PathComponent]
-
-            public init(group: PathComponent...) {
-                self.group = group
-            }
-
-            public init() {
-                self.group = ["oauth"]
-            }
-        }
-
-        public struct AccountLinking: Sendable {
-
-            public enum Strategy: Sendable {
-                case disabled
-                case automatic(allowed: [Identifier.Kind], fallbackToManualOnMultipleMatches: Bool)
-                case manual(allowed: [Identifier.Kind])
-            }
-
-            public struct Routes: Sendable {
-                public let select: [PathComponent]
-                public let verify: [PathComponent]
-
-                public init(
-                    select: [PathComponent] = ["link", "select"],
-                    verify: [PathComponent] = ["link", "verify"]
-                ) {
-                    self.select = select
-                    self.verify = verify
-                }
-            }
-
-            public let strategy: Strategy
-            public let stateExpiration: TimeInterval
-            public let routes: Routes
-
-            public init(
-                strategy: Strategy,
-                stateExpiration: TimeInterval = 600,
-                routes: Routes = .init()
-            ) {
-                self.strategy = strategy
-                self.stateExpiration = stateExpiration
-                self.routes = routes
-            }
-
-            var enabled: Bool {
-                switch strategy {
-                case .disabled:
-                    return false
-                case .automatic, .manual:
-                    return true
-                }
-            }
-        }
-
         public let routes: Routes
-        public let providers: [Passage.FederatedLogin.Provider]
+        public let providers: [Provider]
         public let redirectLocation: String
         public let accountLinking: AccountLinking
 
         public init(
             routes: Routes = .init(),
-            providers: [Passage.FederatedLogin.Provider],
-            accountLinking: AccountLinking = .init(strategy: .disabled),
+            providers: [Provider],
+            accountLinking: AccountLinking = .init(resolution: .disabled),
             redirectLocation: String = "/"
         ) {
             self.routes = routes
@@ -83,19 +26,144 @@ public extension Passage.Configuration {
 
 }
 
-// MARK: - Federated Login Path Helpers
+// MARK: - Federated Login Routes
 
 public extension Passage.Configuration.FederatedLogin {
-    func loginPath(for provider: Passage.FederatedLogin.Provider) -> [PathComponent] {
+
+    struct Routes: Sendable {
+        let group: [PathComponent]
+
+        public init(group: PathComponent...) {
+            self.group = group
+        }
+
+        public init() {
+            self.group = ["connect"]
+        }
+    }
+}
+
+// MARK: - Federated Provider Configuration
+
+public extension Passage.Configuration.FederatedLogin {
+
+    struct Provider: Sendable {
+        public let provider: FederatedProvider
+        public let routes: Routes
+
+        init(
+            provider: FederatedProvider,
+            routes: Routes? = nil,
+        ) {
+            self.provider = provider
+            self.routes = routes ?? .init(
+                login: .init(path: provider.name.description.pathComponents),
+                callback: .init(path: provider.name.description.pathComponents + ["callback"])
+            )
+        }
+    }
+}
+
+// MARK: Federated Login Path Helpers
+
+public extension Passage.Configuration.FederatedLogin {
+    func loginPath(for provider: Provider) -> [PathComponent] {
         return routes.group + provider.routes.login.path
     }
-    func callbackPath(for provider: Passage.FederatedLogin.Provider) -> [PathComponent] {
+    func callbackPath(for provider: Provider) -> [PathComponent] {
         return routes.group + provider.routes.callback.path
     }
-    var linkSelectPath: [PathComponent] {
+    var linkAccountSelectPath: [PathComponent] {
         return routes.group + accountLinking.routes.select
     }
-    var linkVerifyPath: [PathComponent] {
+    var linkAccountVerifyPath: [PathComponent] {
         return routes.group + accountLinking.routes.verify
+    }
+}
+
+
+// MARK: - Federated Provider Routes Configuration
+
+public extension Passage.Configuration.FederatedLogin.Provider {
+
+    struct Routes: Sendable {
+
+        struct Login: Sendable {
+            let path: [PathComponent]
+            init(path: PathComponent...) {
+                self.path = path
+            }
+            init(path: [PathComponent]) {
+                self.path = path
+            }
+        }
+
+        struct Callback: Sendable {
+            let path: [PathComponent]
+            init(path: PathComponent...) {
+                self.path = path
+            }
+            init(path: [PathComponent]) {
+                self.path = path
+            }
+        }
+
+        let login: Login
+        let callback: Callback
+
+        init(
+            login: Login = .init(),
+            callback: Callback = .init(path: "callback")
+        ) {
+            self.login = login
+            self.callback = callback
+        }
+    }
+}
+
+// MARK: - Account Linking Configuration
+
+public extension Passage.Configuration.FederatedLogin {
+
+    struct AccountLinking: Sendable {
+        public let resolution: LinkingResolution
+        public let stateExpiration: TimeInterval
+        public let routes: Routes
+
+        public init(
+            resolution: LinkingResolution,
+            stateExpiration: TimeInterval = 600,
+            routes: Routes = .init()
+        ) {
+            self.resolution = resolution
+            self.stateExpiration = stateExpiration
+            self.routes = routes
+        }
+
+        var enabled: Bool {
+            switch resolution {
+            case .disabled:
+                return false
+            case .automatic, .manual:
+                return true
+            }
+        }
+    }
+}
+
+// MARK: - Account Linking Routes Configuration
+
+public extension Passage.Configuration.FederatedLogin.AccountLinking {
+    struct Routes: Sendable {
+        public let select: [PathComponent]
+        public let verify: [PathComponent]
+
+        public init(
+            select: [PathComponent] = ["link", "select"],
+            verify: [PathComponent] = ["link", "verify"]
+        ) {
+            self.select = select
+            self.verify = verify
+        }
     }
 }

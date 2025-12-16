@@ -5,35 +5,14 @@ import Vapor
 public extension Passage.Configuration {
 
     struct Views: Sendable {
-
-        protocol View: Sendable {
-            var name: String { get }
-            var style: Passage.Views.Style { get }
-            var theme: Passage.Views.Theme { get }
-            var redirect: Redirect { get }
-        }
-
-        public struct Redirect: Sendable {
-            let onSuccess: String?
-            let onFailure: String?
-
-            public init(
-                onSuccess: String? = nil,
-                onFailure: String? = nil,
-            ) {
-                self.onSuccess = onSuccess
-                self.onFailure = onFailure
-            }
-        }
-
         let register: RegisterView?
         let login: LoginView?
         let passwordResetRequest: PasswordResetRequestView?
         let passwordResetConfirm: PasswordResetConfirmView?
         let magicLinkRequest: MagicLinkRequestView?
         let magicLinkVerify: MagicLinkVerifyView?
-        let oauthLinkSelect: OAuthLinkSelectView?
-        let oauthLinkVerify: OAuthLinkVerifyView?
+        let linkAccountSelect: LinkAccountSelectView?
+        let linkAccountVerify: LinkAccountVerifyView?
 
         public init(
             register: RegisterView? = nil,
@@ -42,8 +21,8 @@ public extension Passage.Configuration {
             passwordResetConfirm: PasswordResetConfirmView? = nil,
             magicLinkRequest: MagicLinkRequestView? = nil,
             magicLinkVerify: MagicLinkVerifyView? = nil,
-            oauthLinkSelect: OAuthLinkSelectView? = nil,
-            oauthLinkVerify: OAuthLinkVerifyView? = nil
+            linkAccountSelect: LinkAccountSelectView? = nil,
+            linkAccountVerify: LinkAccountVerifyView? = nil
         ) {
             self.register = register
             self.login = login
@@ -51,11 +30,10 @@ public extension Passage.Configuration {
             self.passwordResetConfirm = passwordResetConfirm
             self.magicLinkRequest = magicLinkRequest
             self.magicLinkVerify = magicLinkVerify
-            self.oauthLinkSelect = oauthLinkSelect
-            self.oauthLinkVerify = oauthLinkVerify
+            self.linkAccountSelect = linkAccountSelect
+            self.linkAccountVerify = linkAccountVerify
         }
     }
-
 }
 
 // MARK: Views Extension
@@ -69,8 +47,20 @@ extension Passage.Configuration.Views {
         passwordResetConfirm != nil ||
         magicLinkRequest != nil ||
         magicLinkVerify != nil ||
-        oauthLinkSelect != nil ||
-        oauthLinkVerify != nil
+        linkAccountSelect != nil ||
+        linkAccountVerify != nil
+    }
+}
+
+// MARK: - View Protocol
+
+extension Passage.Configuration.Views {
+
+    protocol View: Sendable {
+        var name: String { get }
+        var style: Passage.Views.Style { get }
+        var theme: Passage.Views.Theme { get }
+        var redirect: Redirect { get }
     }
 }
 
@@ -83,12 +73,30 @@ extension Passage.Configuration.Views.View {
     }
 }
 
-// MARK: - Login View
+//
 
 public extension Passage.Configuration.Views {
 
-    struct LoginView: Sendable, View {
-        let name: String = "login"
+    struct Redirect: Sendable {
+        let onSuccess: String?
+        let onFailure: String?
+
+        public init(
+            onSuccess: String? = nil,
+            onFailure: String? = nil,
+        ) {
+            self.onSuccess = onSuccess
+            self.onFailure = onFailure
+        }
+    }
+}
+
+// MARK: - Register View
+
+public extension Passage.Configuration.Views {
+
+    struct RegisterView: Sendable, View {
+        let name: String = "register"
         let style: Passage.Views.Style
         let theme: Passage.Views.Theme
         let redirect: Redirect
@@ -109,12 +117,12 @@ public extension Passage.Configuration.Views {
 
 }
 
-// MARK: - Register View
+// MARK: - Login View
 
 public extension Passage.Configuration.Views {
 
-    struct RegisterView: Sendable, View {
-        let name: String = "register"
+    struct LoginView: Sendable, View {
+        let name: String = "login"
         let style: Passage.Views.Style
         let theme: Passage.Views.Theme
         let redirect: Redirect
@@ -219,8 +227,8 @@ public extension Passage.Configuration.Views {
 
 public extension Passage.Configuration.Views {
 
-    struct OAuthLinkSelectView: Sendable, View {
-        let name: String = "oauth-link-select"
+    struct LinkAccountSelectView: Sendable, View {
+        let name: String = "link-account-select"
         let style: Passage.Views.Style
         let theme: Passage.Views.Theme
         let redirect: Redirect
@@ -236,8 +244,8 @@ public extension Passage.Configuration.Views {
         }
     }
 
-    struct OAuthLinkVerifyView: Sendable, View {
-        let name: String = "oauth-link-verify"
+    struct LinkAccountVerifyView: Sendable, View {
+        let name: String = "link-account-verify"
         let style: Passage.Views.Style
         let theme: Passage.Views.Theme
         let redirect: Redirect

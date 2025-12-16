@@ -6,13 +6,6 @@ import JWTKit
 public extension Passage.Configuration {
 
     struct JWT: Sendable {
-        public struct JWKS: Sendable {
-            let json: String
-            public init(json: String) {
-                self.json = json
-            }
-        }
-
         let jwks: JWKS
 
         public init(jwks: JWKS) {
@@ -22,7 +15,21 @@ public extension Passage.Configuration {
 
 }
 
-// MARK: - JWKS Convenience Initializers
+// MARK: - JWKS Configuration
+
+public extension Passage.Configuration.JWT {
+
+    struct JWKS: Sendable {
+        let json: String
+
+        public init(json: String) {
+            self.json = json
+        }
+    }
+
+}
+
+// MARK: JWKS Convenience Initializers
 
 public extension Passage.Configuration.JWT.JWKS {
 

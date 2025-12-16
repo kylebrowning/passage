@@ -5,28 +5,6 @@ import Foundation
 extension Passage.Configuration {
 
     public struct Tokens: Sendable {
-
-        public struct IdToken: Sendable {
-            let timeToLive: TimeInterval
-            public init(timeToLive: TimeInterval) {
-                self.timeToLive = timeToLive
-            }
-        }
-
-        public struct AccessToken: Sendable {
-            let timeToLive: TimeInterval
-            public init(timeToLive: TimeInterval) {
-                self.timeToLive = timeToLive
-            }
-        }
-
-        public struct RefreshToken: Sendable {
-            let timeToLive: TimeInterval
-            public init(timeToLive: TimeInterval) {
-                self.timeToLive = timeToLive
-            }
-        }
-
         let issuer: String?
 
         let idToken: IdToken
@@ -43,6 +21,45 @@ extension Passage.Configuration {
             self.idToken = idToken
             self.accessToken = accessToken
             self.refreshToken = refreshToken
+        }
+    }
+
+}
+
+// MARK: - IdToken Configurations
+
+public extension Passage.Configuration.Tokens {
+
+    struct IdToken: Sendable {
+        let timeToLive: TimeInterval
+        public init(timeToLive: TimeInterval) {
+            self.timeToLive = timeToLive
+        }
+    }
+
+}
+
+// MARK: - AccessToken Configurations
+
+public extension Passage.Configuration.Tokens {
+
+    struct AccessToken: Sendable {
+        let timeToLive: TimeInterval
+        public init(timeToLive: TimeInterval) {
+            self.timeToLive = timeToLive
+        }
+    }
+
+}
+
+// MARK: - RefreshToken Configurations
+
+public extension Passage.Configuration.Tokens {
+
+    struct RefreshToken: Sendable {
+        let timeToLive: TimeInterval
+        public init(timeToLive: TimeInterval) {
+            self.timeToLive = timeToLive
         }
     }
 

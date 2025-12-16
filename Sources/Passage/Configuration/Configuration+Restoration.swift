@@ -3,9 +3,9 @@ import Vapor
 
 // MARK: - Restoration Configuration (Password Reset)
 
-extension Passage.Configuration {
+public extension Passage.Configuration {
 
-    public struct Restoration: Sendable {
+    struct Restoration: Sendable {
 
         let preferredDelivery: Passage.DeliveryType
         let email: Email
@@ -32,48 +32,6 @@ extension Passage.Configuration {
 extension Passage.Configuration.Restoration {
 
     public struct Email: Sendable {
-
-        public struct Routes: Sendable {
-
-            public struct Request: Sendable {
-                public static let `default` = Request(path: "password", "reset", "email")
-                let path: [PathComponent]
-                public init(path: PathComponent...) {
-                    self.path = path
-                }
-            }
-
-            public struct Verify: Sendable {
-                public static let `default` = Verify(path: "password", "reset", "email", "verify")
-                let path: [PathComponent]
-                public init(path: PathComponent...) {
-                    self.path = path
-                }
-            }
-
-            public struct Resend: Sendable {
-                public static let `default` = Resend(path: "password", "reset", "email", "resend")
-                let path: [PathComponent]
-                public init(path: PathComponent...) {
-                    self.path = path
-                }
-            }
-
-            let request: Request
-            let verify: Verify
-            let resend: Resend
-
-            public init(
-                request: Request = .default,
-                verify: Verify = .default,
-                resend: Resend = .default
-            ) {
-                self.request = request
-                self.verify = verify
-                self.resend = resend
-            }
-        }
-
         let routes: Routes
         let codeLength: Int
         let codeExpiration: TimeInterval
@@ -94,56 +52,80 @@ extension Passage.Configuration.Restoration {
 
 }
 
+// MARK: Email Restoration Routes
+
+public extension Passage.Configuration.Restoration.Email {
+
+    struct Routes: Sendable {
+
+        public struct Request: Sendable {
+            public static let `default` = Request(path: "password", "reset", "email")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
+        public struct Verify: Sendable {
+            public static let `default` = Verify(path: "password", "reset", "email", "verify")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
+        public struct Resend: Sendable {
+            public static let `default` = Resend(path: "password", "reset", "email", "resend")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
+        let request: Request
+        let verify: Verify
+        let resend: Resend
+
+        public init(
+            request: Request = .default,
+            verify: Verify = .default,
+            resend: Resend = .default
+        ) {
+            self.request = request
+            self.verify = verify
+            self.resend = resend
+        }
+    }
+
+}
+
+// MARK: Email Restoration URLs
+
+extension Passage.Configuration {
+
+    var emailPasswordResetURL: URL {
+        origin.appending(path: (routes.group + restoration.email.routes.verify.path).string)
+    }
+
+    /// Constructs the email password reset link URL with the given code and email as query parameters.
+    func emailPasswordResetLinkURL(code: String, email: String) -> URL {
+        return emailPasswordResetURL.appending(queryItems: [
+            URLQueryItem(name: "code", value: code),
+            URLQueryItem(name: "email", value: email)
+        ])
+    }
+
+}
+
 // MARK: - Restoration by Phone Configuration
 
-extension Passage.Configuration.Restoration {
+public extension Passage.Configuration.Restoration {
 
-    public struct Phone: Sendable {
+    struct Phone: Sendable {
         let routes: Routes
         let codeLength: Int
         let codeExpiration: TimeInterval
         let maxAttempts: Int
-
-        public struct Routes: Sendable {
-
-            public struct Request: Sendable {
-                public static let `default` = Request(path: "password", "reset", "phone")
-                let path: [PathComponent]
-                public init(path: PathComponent...) {
-                    self.path = path
-                }
-            }
-
-            public struct Verify: Sendable {
-                public static let `default` = Verify(path: "password", "reset", "phone", "verify")
-                let path: [PathComponent]
-                public init(path: PathComponent...) {
-                    self.path = path
-                }
-            }
-
-            public struct Resend: Sendable {
-                public static let `default` = Resend(path: "password", "reset", "phone", "resend")
-                let path: [PathComponent]
-                public init(path: PathComponent...) {
-                    self.path = path
-                }
-            }
-
-            let request: Request
-            let verify: Verify
-            let resend: Resend
-
-            public init(
-                request: Request = .default,
-                verify: Verify = .default,
-                resend: Resend = .default
-            ) {
-                self.request = request
-                self.verify = verify
-                self.resend = resend
-            }
-        }
 
         public init(
             routes: Routes = .init(),
@@ -160,21 +142,55 @@ extension Passage.Configuration.Restoration {
 
 }
 
-// MARK: - Restoration URLs
+// MARK: Phone Restoration Routes
+
+public extension Passage.Configuration.Restoration.Phone {
+
+    struct Routes: Sendable {
+
+        public struct Request: Sendable {
+            public static let `default` = Request(path: "password", "reset", "phone")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
+        public struct Verify: Sendable {
+            public static let `default` = Verify(path: "password", "reset", "phone", "verify")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
+        public struct Resend: Sendable {
+            public static let `default` = Resend(path: "password", "reset", "phone", "resend")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
+        let request: Request
+        let verify: Verify
+        let resend: Resend
+
+        public init(
+            request: Request = .default,
+            verify: Verify = .default,
+            resend: Resend = .default
+        ) {
+            self.request = request
+            self.verify = verify
+            self.resend = resend
+        }
+    }
+}
+
+// MARK: Phone Restoration URLs
 
 extension Passage.Configuration {
-
-    var emailPasswordResetURL: URL {
-        origin.appending(path: (routes.group + restoration.email.routes.verify.path).string)
-    }
-
-    /// Constructs the email password reset link URL with the given code and email as query parameters.
-    func emailPasswordResetLinkURL(code: String, email: String) -> URL {
-        return emailPasswordResetURL.appending(queryItems: [
-            URLQueryItem(name: "code", value: code),
-            URLQueryItem(name: "email", value: email)
-        ])
-    }
 
     var phonePasswordResetURL: URL {
         origin.appending(path: (routes.group + restoration.phone.routes.verify.path).string)

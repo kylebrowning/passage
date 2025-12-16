@@ -46,9 +46,9 @@ struct FederatedLoginIntegrationTests {
                 phone: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
                 useQueues: false
             ),
-            oauth: .init(
+            federatedLogin: .init(
                 providers: [],
-                accountLinking: .init(strategy: .disabled),
+                accountLinking: .init(resolution: .disabled),
                 redirectLocation: "/dashboard"
             )
         )
@@ -92,9 +92,9 @@ struct FederatedLoginIntegrationTests {
                 phone: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
                 useQueues: false
             ),
-            oauth: .init(
+            federatedLogin: .init(
                 providers: [],
-                accountLinking: .init(strategy: .automatic(allowed: [.email], fallbackToManualOnMultipleMatches: true)),
+                accountLinking: .init(resolution: .automatic(matchBy: [.email], onAmbiguity: .requestManualSelection)),
                 redirectLocation: "/dashboard"
             )
         )
@@ -121,8 +121,8 @@ struct FederatedLoginIntegrationTests {
 
         let theme = Passage.Views.Theme(colors: .defaultLight)
         let views = Passage.Configuration.Views(
-            oauthLinkSelect: .init(style: .minimalism, theme: theme),
-            oauthLinkVerify: .init(style: .minimalism, theme: theme)
+            linkAccountSelect: .init(style: .minimalism, theme: theme),
+            linkAccountVerify: .init(style: .minimalism, theme: theme)
         )
 
         let configuration = try Passage.Configuration(
@@ -144,9 +144,9 @@ struct FederatedLoginIntegrationTests {
                 phone: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
                 useQueues: false
             ),
-            oauth: .init(
+            federatedLogin: .init(
                 providers: [],
-                accountLinking: .init(strategy: .manual(allowed: [.email])),
+                accountLinking: .init(resolution: .manual(matchBy: [.email])),
                 redirectLocation: "/dashboard"
             ),
             views: views
@@ -187,8 +187,8 @@ struct FederatedLoginIntegrationTests {
     func createsNewUserForNewFederatedIdentity() async throws {
         try await withApp(configure: configureWithDisabledLinking) { app in
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "new-google-user"),
-                provider: "google",
+                identifier: .federated(.google, userId: "new-google-user"),
+                provider: .google,
                 verifiedEmails: ["newuser@gmail.com"],
                 verifiedPhoneNumbers: [],
                 displayName: "New User",
@@ -214,12 +214,12 @@ struct FederatedLoginIntegrationTests {
     @Test("Federated login returns existing user when federated identifier already exists")
     func returnsExistingUserForKnownFederatedIdentity() async throws {
         try await withApp(configure: configureWithDisabledLinking) { app in
-            let federatedIdentifier = Identifier.federated("google", userId: "existing-user")
+            let federatedIdentifier = Identifier.federated(.google, userId: "existing-user")
 
             // First login creates the user
             let identity = FederatedIdentity(
                 identifier: federatedIdentifier,
-                provider: "google",
+                provider: .google,
                 verifiedEmails: ["existing@gmail.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -258,8 +258,8 @@ struct FederatedLoginIntegrationTests {
 
             // New federated identity with matching email
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "link-to-existing"),
-                provider: "google",
+                identifier: .federated(.google, userId: "link-to-existing"),
+                provider: .google,
                 verifiedEmails: ["verified@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -283,8 +283,8 @@ struct FederatedLoginIntegrationTests {
     func automaticLinkingCreatesNewUserWhenNoMatch() async throws {
         try await withApp(configure: configureWithAutomaticLinking) { app in
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "no-match-user"),
-                provider: "google",
+                identifier: .federated(.google, userId: "no-match-user"),
+                provider: .google,
                 verifiedEmails: ["nomatch@gmail.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -317,8 +317,8 @@ struct FederatedLoginIntegrationTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "manual-link"),
-                provider: "google",
+                identifier: .federated(.google, userId: "manual-link"),
+                provider: .google,
                 verifiedEmails: ["candidate@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -331,7 +331,7 @@ struct FederatedLoginIntegrationTests {
             // Should redirect to link select page
             #expect(response.status == .seeOther)
             let location = response.headers.first(name: .location) ?? ""
-            #expect(location.contains("link/select") || location.contains("oauth/link"))
+            #expect(location.contains("link/select") || location.contains("connect/link"))
         }
     }
 
@@ -339,8 +339,8 @@ struct FederatedLoginIntegrationTests {
     func manualLinkingCreatesNewUserWhenNoCandidates() async throws {
         try await withApp(configure: configureWithManualLinking) { app in
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "no-candidates"),
-                provider: "google",
+                identifier: .federated(.google, userId: "no-candidates"),
+                provider: .google,
                 verifiedEmails: ["newuser@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -368,8 +368,8 @@ struct FederatedLoginIntegrationTests {
     func redirectIncludesExchangeCode() async throws {
         try await withApp(configure: configureWithDisabledLinking) { app in
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "code-test"),
-                provider: "google",
+                identifier: .federated(.google, userId: "code-test"),
+                provider: .google,
                 verifiedEmails: [],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -391,8 +391,8 @@ struct FederatedLoginIntegrationTests {
     func authenticatesUserInSession() async throws {
         try await withApp(configure: configureWithDisabledLinking) { app in
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "session-test"),
-                provider: "google",
+                identifier: .federated(.google, userId: "session-test"),
+                provider: .google,
                 verifiedEmails: [],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -421,10 +421,10 @@ struct FederatedLoginIntegrationTests {
                 ("twitter", "twitter-handle")
             ]
 
-            for (provider, subject) in providers {
+            for (providerName, subject) in providers {
                 let identity = FederatedIdentity(
-                    identifier: .federated(provider, userId: subject),
-                    provider: provider,
+                    identifier: .federated(.named(providerName), userId: subject),
+                    provider: .named(providerName),
                     verifiedEmails: [],
                     verifiedPhoneNumbers: [],
                     displayName: nil,

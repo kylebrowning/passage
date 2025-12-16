@@ -35,11 +35,11 @@ struct IdentifierTests {
 
     @Test("Federated identifier initialization")
     func federatedIdentifierInitialization() {
-        let identifier = Identifier(kind: .federated, value: "oauth-user-123", provider: "google")
+        let identifier = Identifier(kind: .federated, value: "oauth-user-123", provider: .google)
 
         #expect(identifier.kind == Identifier.Kind.federated)
         #expect(identifier.value == "oauth-user-123")
-        #expect(identifier.provider == "google")
+        #expect(identifier.provider?.description == "google")
     }
 
     // MARK: - Convenience Initializer Tests
@@ -73,11 +73,11 @@ struct IdentifierTests {
 
     @Test("Federated convenience initializer")
     func federatedConvenienceInitializer() {
-        let identifier = Identifier.federated("github", userId: "12345")
+        let identifier = Identifier.federated(.github, userId: "12345")
 
         #expect(identifier.kind == Identifier.Kind.federated)
         #expect(identifier.value == "12345")
-        #expect(identifier.provider == "github")
+        #expect(identifier.provider?.description == "github")
     }
 
     // MARK: - Error Support Tests
@@ -89,7 +89,7 @@ struct IdentifierTests {
         (Identifier.Kind.federated, AuthenticationError.federatedAccountAlreadyLinked)
     ])
     func errorWhenAlreadyRegistered(kind: Identifier.Kind, expected: AuthenticationError) {
-        let identifier = Identifier(kind: kind, value: "test-value", provider: kind == .federated ? "test-provider" : nil)
+        let identifier = Identifier(kind: kind, value: "test-value", provider: kind == .federated ? .named("test-provider") : nil)
         #expect(identifier.errorWhenIdentifierAlreadyRegistered == expected)
     }
 
@@ -100,7 +100,7 @@ struct IdentifierTests {
         (Identifier.Kind.federated, AuthenticationError.federatedLoginFailed)
     ])
     func errorWhenInvalid(kind: Identifier.Kind, expected: AuthenticationError) {
-        let identifier = Identifier(kind: kind, value: "test-value", provider: kind == .federated ? "test-provider" : nil)
+        let identifier = Identifier(kind: kind, value: "test-value", provider: kind == .federated ? .named("test-provider") : nil)
         #expect(identifier.errorWhenIdentifierIsInvalid == expected)
     }
 

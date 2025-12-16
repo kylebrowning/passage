@@ -4,7 +4,7 @@ Links OAuth logins to existing user accounts based on matching verified email or
 
 ## Overview
 
-Account Linking is always triggered from [Federated Login](../FederatedLogin/README.md). When a user logs in via OAuth, Passage searches for existing accounts with matching verified identifiers. Based on the configured strategy, it either automatically links the account or initiates a manual verification flow where the user selects and proves ownership of an existing account.
+Account Linking is always triggered from [Federated Login](../FederatedLogin/README.md). When a user logs in via OAuth, Passage searches for existing accounts with matching verified identifiers. Based on the configured resolution, it either automatically links the account or initiates a manual verification flow where the user selects and proves ownership of an existing account.
 
 ### Flow Outcomes
 
@@ -30,9 +30,9 @@ Passage.Configuration(
     federatedLogin: .init(
         providers: [.google, .github],
         accountLinking: .init(
-            strategy: .automatic(
-                allowed: [.email, .phone],              // Match by email and/or phone
-                fallbackToManualOnMultipleMatches: true // Show selection UI if multiple matches
+            resolution: .automatic(
+                matchBy: [.email, .phone],              // Match by email and/or phone
+                onAmbiguity: .requestManualSelection    // Fallback to manual on multiple matches
             ),
             stateExpiration: 600,                       // Manual flow session timeout (seconds)
             routes: .init(
@@ -48,7 +48,7 @@ Passage.Configuration(
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `strategy` | `Strategy` | `.disabled` | Linking behavior (see [Strategies](#strategies)) |
+| `resolution` | `LinkingResolution` | `.disabled` | Linking behavior |
 | `stateExpiration` | `TimeInterval` | `600` | How long manual linking state is valid (seconds) |
 | `routes.select` | `[PathComponent]` | `["link", "select"]` | Path for user selection endpoint |
 | `routes.verify` | `[PathComponent]` | `["link", "verify"]` | Path for verification endpoint |
@@ -111,7 +111,7 @@ Account linking routes are nested under the federated login group (default: `/au
 flowchart TD
     A[OAuth Callback] --> B{User has this<br/>federated ID?}
     B -->|Yes| C[Complete Login]
-    B -->|No| D{Strategy?}
+    B -->|No| D{Resolution?}
 
     D -->|Disabled| E[Create New User]
     D -->|Automatic| F[Search by email/phone]

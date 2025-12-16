@@ -1,6 +1,9 @@
-    import Vapor
+import Vapor
+
+// MARK: - Main Routes Configuration
 
 public extension Passage.Configuration {
+
     struct Routes: Sendable {
         public struct Register: Sendable {
             public static let `default` = Register(path: "register")
@@ -51,6 +54,14 @@ public extension Passage.Configuration {
                 self.shouldBypassGroup = shouldBypassGroup
             }
         }
+
+        let group: [PathComponent]
+        let register: Register
+        let login: Login
+        let logout: Logout
+        let refreshToken: RefreshToken
+        let exchangeCode: ExchangeCode
+        let currentUser: CurrentUser
 
         private init(
             group: [PathComponent],
@@ -108,13 +119,5 @@ public extension Passage.Configuration {
                 currentUser: currentUser
             )
         }
-
-        let group: [PathComponent]
-        let register: Register
-        let login: Login
-        let logout: Logout
-        let refreshToken: RefreshToken
-        let exchangeCode: ExchangeCode
-        let currentUser: CurrentUser
     }
 }

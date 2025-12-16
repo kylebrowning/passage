@@ -1,6 +1,6 @@
 public struct FederatedIdentity: Sendable {
     public let identifier: Identifier
-    public let provider: String
+    public let provider: FederatedProvider.Name
     public let verifiedEmails: [String]
     public let verifiedPhoneNumbers: [String]
 
@@ -9,7 +9,7 @@ public struct FederatedIdentity: Sendable {
 
     public init(
         identifier: Identifier,
-        provider: String,
+        provider: FederatedProvider.Name,
         verifiedEmails: [String],
         verifiedPhoneNumbers: [String],
         displayName: String?,

@@ -151,7 +151,7 @@ struct ViewsIntegrationTests {
                 #expect(renderer.templatePath == "login-minimalism")
 
                 // Verify context was passed
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewParams>
                 #expect(ctx?.params.byEmail == true)
                 #expect(ctx?.params.byPhone == false)
                 #expect(ctx?.params.byUsername == false)
@@ -179,7 +179,7 @@ struct ViewsIntegrationTests {
                 #expect(renderer.templatePath == "login-minimalism")
 
                 // Verify context was passed
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewParams>
                 #expect(ctx?.params.byEmail == false)
                 #expect(ctx?.params.byPhone == true)
                 #expect(ctx?.params.byUsername == false)
@@ -205,7 +205,7 @@ struct ViewsIntegrationTests {
                 #expect(renderer.templatePath == "login-minimalism")
                 // Context contains error parameter
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewParams>
                 #expect(ctx?.params.error == "Invalid credentials")
             })
         }
@@ -399,7 +399,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "register-minimalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.RegisterViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.RegisterViewParams>
                 #expect(ctx?.params.byEmail == true)
                 #expect(ctx?.params.byPhone == false)
                 #expect(ctx?.params.byUsername == false)
@@ -424,7 +424,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "register-neobrutalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.RegisterViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.RegisterViewParams>
                 #expect(ctx?.params.byEmail == false)
                 #expect(ctx?.params.byPhone == true)
                 #expect(ctx?.params.byUsername == false)
@@ -627,7 +627,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "password-reset-request-minimalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordRequestViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordRequestViewParams>
                 #expect(ctx?.params.byEmail == true)
                 #expect(ctx?.params.byPhone == false)
             })
@@ -650,7 +650,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "password-reset-request-material")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordRequestViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordRequestViewParams>
                 #expect(ctx?.params.byEmail == false)
                 #expect(ctx?.params.byPhone == true)
             })
@@ -768,7 +768,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "password-reset-confirm-minimalism")
 
-                let context = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordConfirmViewContext>
+                let context = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordConfirmViewParams>
                 #expect(context?.params.byEmail == true)
                 #expect(context?.params.byPhone == false)
             })
@@ -791,7 +791,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "password-reset-confirm-minimalism")
 
-                let context = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordConfirmViewContext>
+                let context = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordConfirmViewParams>
                 #expect(context?.params.byEmail == false)
                 #expect(context?.params.byPhone == true)
             })
@@ -1123,7 +1123,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "magic-link-request-minimalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewParams>
                 #expect(ctx?.params.byEmail == true)
             })
         }
@@ -1145,7 +1145,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "magic-link-request-neobrutalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewParams>
                 #expect(ctx?.params.byEmail == true)
             })
         }
@@ -1167,7 +1167,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "magic-link-request-minimalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewParams>
                 #expect(ctx?.params.error == "Invalid email")
             })
         }
@@ -1321,7 +1321,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "magic-link-verify-minimalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewParams>
                 #expect(ctx?.params.error?.starts(with: "Validation error:") == true)
             })
         }
@@ -1344,7 +1344,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "magic-link-verify-neobrutalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewParams>
                 #expect(ctx?.params.error?.starts(with: "Validation error:") == true)
             })
         }
@@ -1392,7 +1392,7 @@ struct ViewsIntegrationTests {
                 #expect(renderer.templatePath == "magic-link-verify-minimalism")
 
                 // Verify success message and redirect URL are in context
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewParams>
                 #expect(ctx?.params.success != nil)
                 #expect(ctx?.params.redirectUrl == "/dashboard")
             }
@@ -1428,7 +1428,7 @@ struct ViewsIntegrationTests {
                 #expect(renderer.templatePath == "magic-link-verify-minimalism")
 
                 // Verify error message and login link are in context
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewParams>
                 #expect(ctx?.params.error != nil)
                 #expect(ctx?.params.loginLink == "/login")
             }
@@ -1460,7 +1460,7 @@ struct ViewsIntegrationTests {
             try await app.testing().test(.GET, "/auth/login", afterResponse: { res in
                 #expect(res.status == .ok)
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewParams>
                 #expect(ctx?.params.byEmailMagicLink == true)
                 #expect(ctx?.params.magicLinkRequestLink != nil)
                 // Path doesn't include group prefix, just the route path
@@ -1485,7 +1485,7 @@ struct ViewsIntegrationTests {
             try await app.testing().test(.GET, "/auth/login", afterResponse: { res in
                 #expect(res.status == .ok)
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewParams>
                 #expect(ctx?.params.byEmailMagicLink == false)
                 #expect(ctx?.params.magicLinkRequestLink == nil)
             })
@@ -1525,7 +1525,7 @@ struct ViewsIntegrationTests {
 
     // MARK: - OAuth Link Account Select View Tests (lines 368-391)
 
-    /// Configures test app with OAuth linking and sessions enabled
+    /// Configures test app with Link Accounting and sessions enabled
     @Sendable private func configureWithOAuthLinking(
         _ app: Application,
         viewsConfig: Passage.Configuration.Views,
@@ -1585,10 +1585,10 @@ struct ViewsIntegrationTests {
                 phone: .init(codeLength: 6, codeExpiration: 600, maxAttempts: 5),
                 useQueues: false
             ),
-            oauth: .init(
+            federatedLogin: .init(
                 providers: [],
                 accountLinking: .init(
-                    strategy: .manual(allowed: [.email]),
+                    resolution: .manual(matchBy: [.email]),
                     stateExpiration: 600
                 ),
                 redirectLocation: "/dashboard"
@@ -1612,8 +1612,8 @@ struct ViewsIntegrationTests {
             let body = try req.content.decode(InitiateRequest.self)
 
             let identity = FederatedIdentity(
-                identifier: .federated(body.provider, userId: body.userId),
-                provider: body.provider,
+                identifier: .federated(.named(body.provider), userId: body.userId),
+                provider: .named(body.provider),
                 verifiedEmails: body.verifiedEmails,
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -1678,43 +1678,43 @@ struct ViewsIntegrationTests {
         return nil
     }
 
-    @Test("OAuth link select view returns 404 when not configured")
-    func oauthLinkSelectViewNotConfigured() async throws {
+    @Test("Link Account select view returns 404 when not configured")
+    func linkAccountSelectViewNotConfigured() async throws {
         let viewsConfig = Passage.Configuration.Views()
 
         try await withApp(configure: { app in
             try await configureWithOAuthLinking(app, viewsConfig: viewsConfig)
         }) { app in
-            try await app.testing().test(.GET, "/auth/oauth/link/select", afterResponse: { res in
+            try await app.testing().test(.GET, "/auth/connect/link/select", afterResponse: { res in
                 #expect(res.status == .notFound)
             })
         }
     }
 
-    @Test("OAuth link select view returns error when no linking session exists")
-    func oauthLinkSelectViewNoSession() async throws {
+    @Test("Link Account select view returns error when no linking session exists")
+    func linkAccountSelectViewNoSession() async throws {
         let theme = Passage.Views.Theme(colors: .defaultLight)
         let viewsConfig = Passage.Configuration.Views(
-            oauthLinkSelect: .init(style: .minimalism, theme: theme),
-            oauthLinkVerify: .init(style: .minimalism, theme: theme)
+            linkAccountSelect: .init(style: .minimalism, theme: theme),
+            linkAccountVerify: .init(style: .minimalism, theme: theme)
         )
 
         try await withApp { app in
             try await configureWithOAuthLinking(app, viewsConfig: viewsConfig)
 
-            try await app.testing().test(.GET, "/auth/oauth/link/select", afterResponse: { res in
+            try await app.testing().test(.GET, "/auth/connect/link/select", afterResponse: { res in
                 // Should return bad request because no linking session exists
                 #expect(res.status == .badRequest)
             })
         }
     }
 
-    @Test("OAuth link select view renders with valid session and candidates")
-    func oauthLinkSelectViewRendersWithCandidates() async throws {
+    @Test("Link Account select view renders with valid session and candidates")
+    func linkAccountSelectViewRendersWithCandidates() async throws {
         let theme = Passage.Views.Theme(colors: .defaultLight)
         let viewsConfig = Passage.Configuration.Views(
-            oauthLinkSelect: .init(style: .minimalism, theme: theme),
-            oauthLinkVerify: .init(style: .minimalism, theme: theme)
+            linkAccountSelect: .init(style: .minimalism, theme: theme),
+            linkAccountVerify: .init(style: .minimalism, theme: theme)
         )
 
         try await withApp { app in
@@ -1742,7 +1742,7 @@ struct ViewsIntegrationTests {
                     }
                     try req.content.encode(InitiateRequest(
                         provider: "google",
-                        userId: "oauth-123",
+                        userId: "some-123",
                         verifiedEmails: ["candidate@example.com"]
                     ))
                 },
@@ -1756,7 +1756,7 @@ struct ViewsIntegrationTests {
 
             // GET the link select view with session
             try await app.testing().test(
-                .GET, "/auth/oauth/link/select",
+                .GET, "/auth/connect/link/select",
                 beforeRequest: { req in
                     if let cookie = sessionCookie {
                         req.headers.add(name: .cookie, value: cookie)
@@ -1766,10 +1766,10 @@ struct ViewsIntegrationTests {
                     #expect(res.status == .ok)
 
                     // Verify correct template was requested
-                    #expect(renderer.templatePath == "oauth-link-select-minimalism")
+                    #expect(renderer.templatePath == "link-account-select-minimalism")
 
                     // Verify context was passed with candidates
-                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.OAuthLinkSelectViewContext>
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountSelectViewParams>
                     #expect(ctx?.params.provider == "google")
                     #expect(ctx?.params.candidates.count == 1)
                     #expect(ctx?.params.candidates.first?.maskedEmail != nil)
@@ -1779,12 +1779,12 @@ struct ViewsIntegrationTests {
         }
     }
 
-    @Test("OAuth link select view renders with multiple candidates")
-    func oauthLinkSelectViewRendersWithMultipleCandidates() async throws {
+    @Test("Link Account select view renders with multiple candidates")
+    func linkAccountSelectViewRendersWithMultipleCandidates() async throws {
         let theme = Passage.Views.Theme(colors: .oceanLight)
         let viewsConfig = Passage.Configuration.Views(
-            oauthLinkSelect: .init(style: .neobrutalism, theme: theme),
-            oauthLinkVerify: .init(style: .neobrutalism, theme: theme)
+            linkAccountSelect: .init(style: .neobrutalism, theme: theme),
+            linkAccountVerify: .init(style: .neobrutalism, theme: theme)
         )
 
         try await withApp { app in
@@ -1818,7 +1818,7 @@ struct ViewsIntegrationTests {
                     }
                     try req.content.encode(InitiateRequest(
                         provider: "github",
-                        userId: "oauth-456",
+                        userId: "some-456",
                         verifiedEmails: ["user1@example.com", "user2@example.com"]
                     ))
                 },
@@ -1832,7 +1832,7 @@ struct ViewsIntegrationTests {
 
             // GET the link select view
             try await app.testing().test(
-                .GET, "/auth/oauth/link/select",
+                .GET, "/auth/connect/link/select",
                 beforeRequest: { req in
                     if let cookie = sessionCookie {
                         req.headers.add(name: .cookie, value: cookie)
@@ -1840,9 +1840,9 @@ struct ViewsIntegrationTests {
                 },
                 afterResponse: { res in
                     #expect(res.status == .ok)
-                    #expect(renderer.templatePath == "oauth-link-select-neobrutalism")
+                    #expect(renderer.templatePath == "link-account-select-neobrutalism")
 
-                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.OAuthLinkSelectViewContext>
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountSelectViewParams>
                     #expect(ctx?.params.provider == "github")
                     #expect(ctx?.params.candidates.count == 2)
                 }
@@ -1852,43 +1852,43 @@ struct ViewsIntegrationTests {
 
     // MARK: - OAuth Link Account Verify View Tests (lines 422-451)
 
-    @Test("OAuth link verify view returns 404 when not configured")
-    func oauthLinkVerifyViewNotConfigured() async throws {
+    @Test("Link Account verify view returns 404 when not configured")
+    func linkAccountVerifyViewNotConfigured() async throws {
         let viewsConfig = Passage.Configuration.Views()
 
         try await withApp(configure: { app in
             try await configureWithOAuthLinking(app, viewsConfig: viewsConfig)
         }) { app in
-            try await app.testing().test(.GET, "/auth/oauth/link/verify", afterResponse: { res in
+            try await app.testing().test(.GET, "/auth/connect/link/verify", afterResponse: { res in
                 #expect(res.status == .notFound)
             })
         }
     }
 
-    @Test("OAuth link verify view returns error when no linking session exists")
-    func oauthLinkVerifyViewNoSession() async throws {
+    @Test("Link Account verify view returns error when no linking session exists")
+    func linkAccountVerifyViewNoSession() async throws {
         let theme = Passage.Views.Theme(colors: .defaultLight)
         let viewsConfig = Passage.Configuration.Views(
-            oauthLinkSelect: .init(style: .minimalism, theme: theme),
-            oauthLinkVerify: .init(style: .minimalism, theme: theme)
+            linkAccountSelect: .init(style: .minimalism, theme: theme),
+            linkAccountVerify: .init(style: .minimalism, theme: theme)
         )
 
         try await withApp { app in
             try await configureWithOAuthLinking(app, viewsConfig: viewsConfig)
 
-            try await app.testing().test(.GET, "/auth/oauth/link/verify", afterResponse: { res in
+            try await app.testing().test(.GET, "/auth/connect/link/verify", afterResponse: { res in
                 // Should return bad request because no linking session exists
                 #expect(res.status == .badRequest)
             })
         }
     }
 
-    @Test("OAuth link verify view returns bad request when no user selected")
-    func oauthLinkVerifyViewNoUserSelected() async throws {
+    @Test("Link Account verify view returns bad request when no user selected")
+    func linkAccountVerifyViewNoUserSelected() async throws {
         let theme = Passage.Views.Theme(colors: .defaultLight)
         let viewsConfig = Passage.Configuration.Views(
-            oauthLinkSelect: .init(style: .minimalism, theme: theme),
-            oauthLinkVerify: .init(style: .minimalism, theme: theme)
+            linkAccountSelect: .init(style: .minimalism, theme: theme),
+            linkAccountVerify: .init(style: .minimalism, theme: theme)
         )
 
         try await withApp { app in
@@ -1915,7 +1915,7 @@ struct ViewsIntegrationTests {
                     }
                     try req.content.encode(InitiateRequest(
                         provider: "google",
-                        userId: "oauth-789",
+                        userId: "some-789",
                         verifiedEmails: ["candidate@example.com"]
                     ))
                 },
@@ -1929,7 +1929,7 @@ struct ViewsIntegrationTests {
 
             // Try to access verify view without selecting a user
             try await app.testing().test(
-                .GET, "/auth/oauth/link/verify",
+                .GET, "/auth/connect/link/verify",
                 beforeRequest: { req in
                     if let cookie = sessionCookie {
                         req.headers.add(name: .cookie, value: cookie)
@@ -1943,12 +1943,12 @@ struct ViewsIntegrationTests {
         }
     }
 
-    @Test("OAuth link verify view renders with valid session and selected user with password")
-    func oauthLinkVerifyViewRendersWithPasswordUser() async throws {
+    @Test("Link Account verify view renders with valid session and selected user with password")
+    func linkAccountVerifyViewRendersWithPasswordUser() async throws {
         let theme = Passage.Views.Theme(colors: .defaultLight)
         let viewsConfig = Passage.Configuration.Views(
-            oauthLinkSelect: .init(style: .minimalism, theme: theme),
-            oauthLinkVerify: .init(style: .minimalism, theme: theme)
+            linkAccountSelect: .init(style: .minimalism, theme: theme),
+            linkAccountVerify: .init(style: .minimalism, theme: theme)
         )
 
         try await withApp { app in
@@ -1977,7 +1977,7 @@ struct ViewsIntegrationTests {
                     }
                     try req.content.encode(InitiateRequest(
                         provider: "google",
-                        userId: "oauth-pw-test",
+                        userId: "some-pw-test",
                         verifiedEmails: ["password-user@example.com"]
                     ))
                 },
@@ -2012,7 +2012,7 @@ struct ViewsIntegrationTests {
 
             // GET the link verify view
             try await app.testing().test(
-                .GET, "/auth/oauth/link/verify",
+                .GET, "/auth/connect/link/verify",
                 beforeRequest: { req in
                     if let cookie = sessionCookie {
                         req.headers.add(name: .cookie, value: cookie)
@@ -2022,10 +2022,10 @@ struct ViewsIntegrationTests {
                     #expect(res.status == .ok)
 
                     // Verify correct template was requested
-                    #expect(renderer.templatePath == "oauth-link-verify-minimalism")
+                    #expect(renderer.templatePath == "link-account-verify-minimalism")
 
                     // Verify context was passed correctly
-                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.OAuthLinkVerifyViewContext>
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountVerifyViewParams>
                     #expect(ctx?.params.maskedEmail != nil)
                     #expect(ctx?.params.hasPassword == true)
                     #expect(ctx?.params.canUseEmailCode == false)  // Has password, so can't use email code
@@ -2035,12 +2035,12 @@ struct ViewsIntegrationTests {
         }
     }
 
-    @Test("OAuth link verify view renders with user who can use email code")
-    func oauthLinkVerifyViewRendersWithEmailCodeUser() async throws {
+    @Test("Link Account verify view renders with user who can use email code")
+    func linkAccountVerifyViewRendersWithEmailCodeUser() async throws {
         let theme = Passage.Views.Theme(colors: .forestLight)
         let viewsConfig = Passage.Configuration.Views(
-            oauthLinkSelect: .init(style: .material, theme: theme),
-            oauthLinkVerify: .init(style: .material, theme: theme)
+            linkAccountSelect: .init(style: .material, theme: theme),
+            linkAccountVerify: .init(style: .material, theme: theme)
         )
 
         try await withApp { app in
@@ -2069,7 +2069,7 @@ struct ViewsIntegrationTests {
                     }
                     try req.content.encode(InitiateRequest(
                         provider: "google",
-                        userId: "oauth-email-code",
+                        userId: "some-email-code",
                         verifiedEmails: ["no-password@example.com"]
                     ))
                 },
@@ -2103,7 +2103,7 @@ struct ViewsIntegrationTests {
 
             // GET the link verify view
             try await app.testing().test(
-                .GET, "/auth/oauth/link/verify",
+                .GET, "/auth/connect/link/verify",
                 beforeRequest: { req in
                     if let cookie = sessionCookie {
                         req.headers.add(name: .cookie, value: cookie)
@@ -2113,10 +2113,10 @@ struct ViewsIntegrationTests {
                     #expect(res.status == .ok)
 
                     // Verify correct template was requested
-                    #expect(renderer.templatePath == "oauth-link-verify-material")
+                    #expect(renderer.templatePath == "link-account-verify-material")
 
                     // Verify context shows canUseEmailCode is true
-                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.OAuthLinkVerifyViewContext>
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountVerifyViewParams>
                     #expect(ctx?.params.maskedEmail != nil)
                     #expect(ctx?.params.hasPassword == false)
                     #expect(ctx?.params.canUseEmailCode == true)  // No password + verified email = can use code
@@ -2126,33 +2126,33 @@ struct ViewsIntegrationTests {
         }
     }
 
-    @Test("OAuth link select and verify views configuration integration")
-    func oauthLinkViewsConfigurationIntegration() async throws {
+    @Test("Link Account select and verify views configuration integration")
+    func linkAccountViewsConfigurationIntegration() async throws {
         let theme = Passage.Views.Theme(colors: .defaultLight)
-        let linkSelectView = Passage.Configuration.Views.OAuthLinkSelectView(
+        let linkSelectView = Passage.Configuration.Views.LinkAccountSelectView(
             style: .minimalism,
             theme: theme
         )
-        let linkVerifyView = Passage.Configuration.Views.OAuthLinkVerifyView(
+        let linkVerifyView = Passage.Configuration.Views.LinkAccountVerifyView(
             style: .neobrutalism,
             theme: Passage.Views.Theme(colors: .oceanLight)
         )
 
         let viewsConfig = Passage.Configuration.Views(
-            oauthLinkSelect: linkSelectView,
-            oauthLinkVerify: linkVerifyView
+            linkAccountSelect: linkSelectView,
+            linkAccountVerify: linkVerifyView
         )
 
         #expect(viewsConfig.enabled == true)
-        #expect(viewsConfig.oauthLinkSelect != nil)
-        #expect(viewsConfig.oauthLinkVerify != nil)
+        #expect(viewsConfig.linkAccountSelect != nil)
+        #expect(viewsConfig.linkAccountVerify != nil)
 
         try await withApp(configure: { app in
             try await configureWithOAuthLinking(app, viewsConfig: viewsConfig)
         }) { app in
             #expect(app.passage.storage.configuration.views.enabled == true)
-            #expect(app.passage.storage.configuration.views.oauthLinkSelect?.style == .minimalism)
-            #expect(app.passage.storage.configuration.views.oauthLinkVerify?.style == .neobrutalism)
+            #expect(app.passage.storage.configuration.views.linkAccountSelect?.style == .minimalism)
+            #expect(app.passage.storage.configuration.views.linkAccountVerify?.style == .neobrutalism)
         }
     }
 }
