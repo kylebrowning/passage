@@ -3,7 +3,7 @@ public struct FederatedProvider: Sendable {
     public let credentials: Credentials
     public let scope: [String]
 
-    init(
+    public init(
         name: Name,
         credentials: Credentials = .conventional,
         scope: [String] = [],
