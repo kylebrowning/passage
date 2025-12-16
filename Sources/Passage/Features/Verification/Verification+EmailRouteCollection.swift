@@ -2,7 +2,7 @@ import Vapor
 
 extension Passage.Verification {
 
-    struct EmailRouteCollection: Vapor.RouteCollection {
+    struct EmailRouteCollection: Vapor.RouteCollection, Sendable {
 
         let config: Passage.Configuration.Verification.Email
         let group: [PathComponent]

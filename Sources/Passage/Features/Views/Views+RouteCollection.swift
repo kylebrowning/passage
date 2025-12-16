@@ -2,7 +2,7 @@ import Vapor
 
 extension Passage.Views {
 
-    struct RouteCollection: Vapor.RouteCollection {
+    struct RouteCollection: Vapor.RouteCollection, Sendable {
 
         let config: Passage.Configuration.Views
         let routes: Passage.Configuration.Routes

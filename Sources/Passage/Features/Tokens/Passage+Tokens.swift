@@ -3,7 +3,7 @@ import Vapor
 
 extension Passage {
 
-    struct Tokens {
+    struct Tokens: Sendable {
         let request: Request
     }
 

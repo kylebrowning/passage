@@ -34,6 +34,16 @@ struct PassageBearerAuthenticatorTests {
         let payloadType = PassageBearerAuthenticator.Payload.self
         #expect(payloadType == AccessToken.self)
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("PassageBearerAuthenticator conforms to Sendable")
+    func conformsToSendable() {
+        assertSendable(PassageBearerAuthenticator())
+    }
 }
 
 @Suite("PassageSessionAuthenticator Tests")
@@ -65,5 +75,15 @@ struct PassageSessionAuthenticatorTests {
     func conformsToAsyncMiddleware() {
         let authenticator = PassageSessionAuthenticator()
         #expect(authenticator is any AsyncMiddleware)
+    }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("PassageSessionAuthenticator conforms to Sendable")
+    func conformsToSendable() {
+        assertSendable(PassageSessionAuthenticator())
     }
 }

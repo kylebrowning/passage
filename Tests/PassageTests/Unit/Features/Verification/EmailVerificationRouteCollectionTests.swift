@@ -302,4 +302,15 @@ struct EmailVerificationRouteCollectionTests {
 
         #expect(collection.group.count == 5)
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("Verification.EmailRouteCollection conforms to Sendable")
+    func conformsToSendable() {
+        let config = Passage.Configuration.Verification.Email()
+        assertSendable(Passage.Verification.EmailRouteCollection(config: config, group: []))
+    }
 }

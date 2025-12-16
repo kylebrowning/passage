@@ -170,4 +170,15 @@ struct AccountRouteCollectionTests {
         #expect(collection1.routes.register.path[0] == PathComponent.constant("register1"))
         #expect(collection2.routes.register.path[0] == PathComponent.constant("register2"))
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("Account.RouteCollection conforms to Sendable")
+    func conformsToSendable() {
+        let routes = Passage.Configuration.Routes()
+        assertSendable(Passage.Account.RouteCollection(routes: routes))
+    }
 }

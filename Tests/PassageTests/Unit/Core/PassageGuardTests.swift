@@ -33,4 +33,17 @@ struct PassageGuardTests {
         let guard_ = PassageGuard()
         #expect(guard_ is any AsyncMiddleware)
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    /// If the type doesn't conform to Sendable, passing it to this function
+    /// will cause a compile-time error.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("PassageGuard conforms to Sendable")
+    func conformsToSendable() {
+        assertSendable(PassageGuard())
+        assertSendable(PassageGuard(throwing: Abort(.unauthorized)))
+    }
 }

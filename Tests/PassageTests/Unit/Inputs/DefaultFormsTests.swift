@@ -320,4 +320,109 @@ struct DefaultFormsTests {
 
         #expect(forms.count == 10)
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("DefaultLoginForm conforms to Sendable")
+    func defaultLoginFormConformsToSendable() {
+        assertSendable(Passage.DefaultLoginForm(email: "test@example.com", phone: nil, username: nil, password: "password123"))
+    }
+
+    @Test("DefaultRegisterForm conforms to Sendable")
+    func defaultRegisterFormConformsToSendable() {
+        assertSendable(Passage.DefaultRegisterForm(email: "test@example.com", phone: nil, username: nil, password: "password123", confirmPassword: "password123"))
+    }
+
+    @Test("DefaultRefreshTokenForm conforms to Sendable")
+    func defaultRefreshTokenFormConformsToSendable() {
+        assertSendable(Passage.DefaultRefreshTokenForm(refreshToken: "token"))
+    }
+
+    @Test("DefaultExchangeCodeForm conforms to Sendable")
+    func defaultExchangeCodeFormConformsToSendable() {
+        assertSendable(Passage.DefaultExchangeCodeForm(code: "code123"))
+    }
+
+    @Test("DefaultLogoutForm conforms to Sendable")
+    func defaultLogoutFormConformsToSendable() {
+        assertSendable(Passage.DefaultLogoutForm())
+    }
+
+    @Test("DefaultEmailVerificationRequestForm conforms to Sendable")
+    func defaultEmailVerificationRequestFormConformsToSendable() {
+        assertSendable(Passage.DefaultEmailVerificationRequestForm(email: "test@example.com"))
+    }
+
+    @Test("DefaultEmailVerificationConfirmForm conforms to Sendable")
+    func defaultEmailVerificationConfirmFormConformsToSendable() {
+        assertSendable(Passage.DefaultEmailVerificationConfirmForm(code: "123456", email: "test@example.com"))
+    }
+
+    @Test("DefaultPhoneVerificationRequestForm conforms to Sendable")
+    func defaultPhoneVerificationRequestFormConformsToSendable() {
+        assertSendable(Passage.DefaultPhoneVerificationRequestForm(phone: "+1234567890"))
+    }
+
+    @Test("DefaultPhoneVerificationConfirmForm conforms to Sendable")
+    func defaultPhoneVerificationConfirmFormConformsToSendable() {
+        assertSendable(Passage.DefaultPhoneVerificationConfirmForm(code: "123456", phone: "+1234567890"))
+    }
+
+    @Test("DefaultEmailPasswordResetRequestForm conforms to Sendable")
+    func defaultEmailPasswordResetRequestFormConformsToSendable() {
+        assertSendable(Passage.DefaultEmailPasswordResetRequestForm(email: "test@example.com"))
+    }
+
+    @Test("DefaultEmailPasswordResetVerifyForm conforms to Sendable")
+    func defaultEmailPasswordResetVerifyFormConformsToSendable() {
+        assertSendable(Passage.DefaultEmailPasswordResetVerifyForm(email: "test@example.com", code: "123456", newPassword: "newpassword"))
+    }
+
+    @Test("DefaultEmailPasswordResetResendForm conforms to Sendable")
+    func defaultEmailPasswordResetResendFormConformsToSendable() {
+        assertSendable(Passage.DefaultEmailPasswordResetResendForm(email: "test@example.com"))
+    }
+
+    @Test("DefaultPhonePasswordResetRequestForm conforms to Sendable")
+    func defaultPhonePasswordResetRequestFormConformsToSendable() {
+        assertSendable(Passage.DefaultPhonePasswordResetRequestForm(phone: "+1234567890"))
+    }
+
+    @Test("DefaultPhonePasswordResetVerifyForm conforms to Sendable")
+    func defaultPhonePasswordResetVerifyFormConformsToSendable() {
+        assertSendable(Passage.DefaultPhonePasswordResetVerifyForm(phone: "+1234567890", code: "123456", newPassword: "newpassword"))
+    }
+
+    @Test("DefaultPhonePasswordResetResendForm conforms to Sendable")
+    func defaultPhonePasswordResetResendFormConformsToSendable() {
+        assertSendable(Passage.DefaultPhonePasswordResetResendForm(phone: "+1234567890"))
+    }
+
+    @Test("DefaultLinkAccountSelectForm conforms to Sendable")
+    func defaultLinkAccountSelectFormConformsToSendable() {
+        assertSendable(Passage.DefaultLinkAccountSelectForm(selectedUserId: "user123"))
+    }
+
+    @Test("DefaultLinkAccountVerifyForm conforms to Sendable")
+    func defaultLinkAccountVerifyFormConformsToSendable() {
+        assertSendable(Passage.DefaultLinkAccountVerifyForm(password: "password", verificationCode: nil))
+    }
+
+    @Test("DefaultEmailMagicLinkRequestForm conforms to Sendable")
+    func defaultEmailMagicLinkRequestFormConformsToSendable() {
+        assertSendable(Passage.DefaultEmailMagicLinkRequestForm(email: "test@example.com"))
+    }
+
+    @Test("DefaultEmailMagicLinkVerifyForm conforms to Sendable")
+    func defaultEmailMagicLinkVerifyFormConformsToSendable() {
+        assertSendable(Passage.DefaultEmailMagicLinkVerifyForm(token: "token123"))
+    }
+
+    @Test("DefaultEmailMagicLinkResendForm conforms to Sendable")
+    func defaultEmailMagicLinkResendFormConformsToSendable() {
+        assertSendable(Passage.DefaultEmailMagicLinkResendForm(email: "test@example.com"))
+    }
 }

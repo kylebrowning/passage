@@ -2,7 +2,7 @@ import Vapor
 
 extension Passage.Passwordless {
 
-    struct MagicLinkEmailRouteCollection: Vapor.RouteCollection {
+    struct MagicLinkEmailRouteCollection: Vapor.RouteCollection, Sendable {
 
         let routes: Passage.Configuration.Passwordless.MagicLink.Routes
         let group: [PathComponent]

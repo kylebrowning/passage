@@ -2,7 +2,7 @@ import Vapor
 
 extension Passage.Tokens {
 
-    struct RouteCollection: Vapor.RouteCollection {
+    struct RouteCollection: Vapor.RouteCollection, Sendable {
 
         init(routes: Passage.Configuration.Routes) {
             self.routes = routes
