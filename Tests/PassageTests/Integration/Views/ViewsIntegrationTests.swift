@@ -151,7 +151,7 @@ struct ViewsIntegrationTests {
                 #expect(renderer.templatePath == "login-minimalism")
 
                 // Verify context was passed
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewParams>
                 #expect(ctx?.params.byEmail == true)
                 #expect(ctx?.params.byPhone == false)
                 #expect(ctx?.params.byUsername == false)
@@ -179,7 +179,7 @@ struct ViewsIntegrationTests {
                 #expect(renderer.templatePath == "login-minimalism")
 
                 // Verify context was passed
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewParams>
                 #expect(ctx?.params.byEmail == false)
                 #expect(ctx?.params.byPhone == true)
                 #expect(ctx?.params.byUsername == false)
@@ -205,7 +205,7 @@ struct ViewsIntegrationTests {
                 #expect(renderer.templatePath == "login-minimalism")
                 // Context contains error parameter
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewParams>
                 #expect(ctx?.params.error == "Invalid credentials")
             })
         }
@@ -399,7 +399,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "register-minimalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.RegisterViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.RegisterViewParams>
                 #expect(ctx?.params.byEmail == true)
                 #expect(ctx?.params.byPhone == false)
                 #expect(ctx?.params.byUsername == false)
@@ -424,7 +424,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "register-neobrutalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.RegisterViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.RegisterViewParams>
                 #expect(ctx?.params.byEmail == false)
                 #expect(ctx?.params.byPhone == true)
                 #expect(ctx?.params.byUsername == false)
@@ -627,7 +627,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "password-reset-request-minimalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordRequestViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordRequestViewParams>
                 #expect(ctx?.params.byEmail == true)
                 #expect(ctx?.params.byPhone == false)
             })
@@ -650,7 +650,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "password-reset-request-material")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordRequestViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordRequestViewParams>
                 #expect(ctx?.params.byEmail == false)
                 #expect(ctx?.params.byPhone == true)
             })
@@ -768,7 +768,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "password-reset-confirm-minimalism")
 
-                let context = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordConfirmViewContext>
+                let context = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordConfirmViewParams>
                 #expect(context?.params.byEmail == true)
                 #expect(context?.params.byPhone == false)
             })
@@ -791,7 +791,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "password-reset-confirm-minimalism")
 
-                let context = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordConfirmViewContext>
+                let context = renderer.capturedContext as? Passage.Views.Context<Passage.Views.ResetPasswordConfirmViewParams>
                 #expect(context?.params.byEmail == false)
                 #expect(context?.params.byPhone == true)
             })
@@ -1123,7 +1123,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "magic-link-request-minimalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewParams>
                 #expect(ctx?.params.byEmail == true)
             })
         }
@@ -1145,7 +1145,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "magic-link-request-neobrutalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewParams>
                 #expect(ctx?.params.byEmail == true)
             })
         }
@@ -1167,7 +1167,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "magic-link-request-minimalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkRequestViewParams>
                 #expect(ctx?.params.error == "Invalid email")
             })
         }
@@ -1321,7 +1321,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "magic-link-verify-minimalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewParams>
                 #expect(ctx?.params.error?.starts(with: "Validation error:") == true)
             })
         }
@@ -1344,7 +1344,7 @@ struct ViewsIntegrationTests {
                 #expect(res.status == .ok)
                 #expect(renderer.templatePath == "magic-link-verify-neobrutalism")
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewParams>
                 #expect(ctx?.params.error?.starts(with: "Validation error:") == true)
             })
         }
@@ -1392,7 +1392,7 @@ struct ViewsIntegrationTests {
                 #expect(renderer.templatePath == "magic-link-verify-minimalism")
 
                 // Verify success message and redirect URL are in context
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewParams>
                 #expect(ctx?.params.success != nil)
                 #expect(ctx?.params.redirectUrl == "/dashboard")
             }
@@ -1428,7 +1428,7 @@ struct ViewsIntegrationTests {
                 #expect(renderer.templatePath == "magic-link-verify-minimalism")
 
                 // Verify error message and login link are in context
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.MagicLinkVerifyViewParams>
                 #expect(ctx?.params.error != nil)
                 #expect(ctx?.params.loginLink == "/login")
             }
@@ -1460,7 +1460,7 @@ struct ViewsIntegrationTests {
             try await app.testing().test(.GET, "/auth/login", afterResponse: { res in
                 #expect(res.status == .ok)
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewParams>
                 #expect(ctx?.params.byEmailMagicLink == true)
                 #expect(ctx?.params.magicLinkRequestLink != nil)
                 // Path doesn't include group prefix, just the route path
@@ -1485,7 +1485,7 @@ struct ViewsIntegrationTests {
             try await app.testing().test(.GET, "/auth/login", afterResponse: { res in
                 #expect(res.status == .ok)
 
-                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewContext>
+                let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LoginViewParams>
                 #expect(ctx?.params.byEmailMagicLink == false)
                 #expect(ctx?.params.magicLinkRequestLink == nil)
             })
@@ -1588,7 +1588,7 @@ struct ViewsIntegrationTests {
             federatedLogin: .init(
                 providers: [],
                 accountLinking: .init(
-                    strategy: .manual(allowed: [.email]),
+                    resolution: .manual(matchBy: [.email]),
                     stateExpiration: 600
                 ),
                 redirectLocation: "/dashboard"
@@ -1612,8 +1612,8 @@ struct ViewsIntegrationTests {
             let body = try req.content.decode(InitiateRequest.self)
 
             let identity = FederatedIdentity(
-                identifier: .federated(body.provider, userId: body.userId),
-                provider: body.provider,
+                identifier: .federated(.named(body.provider), userId: body.userId),
+                provider: .named(body.provider),
                 verifiedEmails: body.verifiedEmails,
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -1769,7 +1769,7 @@ struct ViewsIntegrationTests {
                     #expect(renderer.templatePath == "link-account-select-minimalism")
 
                     // Verify context was passed with candidates
-                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountSelectViewContext>
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountSelectViewParams>
                     #expect(ctx?.params.provider == "google")
                     #expect(ctx?.params.candidates.count == 1)
                     #expect(ctx?.params.candidates.first?.maskedEmail != nil)
@@ -1842,7 +1842,7 @@ struct ViewsIntegrationTests {
                     #expect(res.status == .ok)
                     #expect(renderer.templatePath == "link-account-select-neobrutalism")
 
-                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountSelectViewContext>
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountSelectViewParams>
                     #expect(ctx?.params.provider == "github")
                     #expect(ctx?.params.candidates.count == 2)
                 }
@@ -2025,7 +2025,7 @@ struct ViewsIntegrationTests {
                     #expect(renderer.templatePath == "link-account-verify-minimalism")
 
                     // Verify context was passed correctly
-                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountVerifyViewContext>
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountVerifyViewParams>
                     #expect(ctx?.params.maskedEmail != nil)
                     #expect(ctx?.params.hasPassword == true)
                     #expect(ctx?.params.canUseEmailCode == false)  // Has password, so can't use email code
@@ -2116,7 +2116,7 @@ struct ViewsIntegrationTests {
                     #expect(renderer.templatePath == "link-account-verify-material")
 
                     // Verify context shows canUseEmailCode is true
-                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountVerifyViewContext>
+                    let ctx = renderer.capturedContext as? Passage.Views.Context<Passage.Views.LinkAccountVerifyViewParams>
                     #expect(ctx?.params.maskedEmail != nil)
                     #expect(ctx?.params.hasPassword == false)
                     #expect(ctx?.params.canUseEmailCode == true)  // No password + verified email = can use code

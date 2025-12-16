@@ -96,7 +96,10 @@ struct PassageConfigurationTests {
             jwt: .init(jwks: .init(json: "{}")),
             federatedLogin: .init(
                 routes: .init(group: "social"),
-                providers: [.google(), .github()]
+                providers: [
+                    .init(provider: .google()),
+                    .init(provider: .github()),
+                ]
             )
         )
 
@@ -144,7 +147,7 @@ struct PassageConfigurationTests {
             ),
             federatedLogin: .init(
                 routes: .init(group: "oauth"),
-                providers: [.google()]
+                providers: [.init(provider: .google())]
             ),
             views: .init(
                 register: .init(style: .material, theme: theme, identifier: .email),

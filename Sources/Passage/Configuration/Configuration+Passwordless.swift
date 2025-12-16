@@ -53,7 +53,7 @@ public extension Passage.Configuration.Passwordless {
 
 }
 
-// MARK: - Passwordless Magic Link Routes
+// MARK: Passwordless Magic Link Routes
 
 public extension Passage.Configuration.Passwordless.MagicLink {
 
@@ -103,7 +103,7 @@ public extension Passage.Configuration.Passwordless.MagicLink {
 }
 
 
-// MARK: - Magic Link URLs
+// MARK: Magic Link URLs
 
 extension Passage.Configuration {
 

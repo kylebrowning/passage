@@ -11,11 +11,11 @@ extension Passage.Views {
 
 }
 
-// MARK: - Login View Context
+// MARK: - Login View Params
 
 extension Passage.Views {
 
-    struct LoginViewContext: Content {
+    struct LoginViewParams: Content {
         let byEmail: Bool
         let byPhone: Bool
         let byUsername: Bool
@@ -62,11 +62,11 @@ extension Passage.Views {
 
 }
 
-// MARK: - Register View Context
+// MARK: - Register View Params
 
 extension Passage.Views {
 
-    struct RegisterViewContext: Content {
+    struct RegisterViewParams: Content {
         let byEmail: Bool
         let byPhone: Bool
         let byUsername: Bool
@@ -104,11 +104,11 @@ extension Passage.Views {
 
 }
 
-// MARK: - Reset Password Request View Context
+// MARK: - Reset Password Request View Params
 
 extension Passage.Views {
 
-    struct ResetPasswordRequestViewContext: Content {
+    struct ResetPasswordRequestViewParams: Content {
         let byEmail: Bool
         let byPhone: Bool
         let error: String?
@@ -131,11 +131,11 @@ extension Passage.Views {
 
 }
 
-// MARK: - Reset Password Confirmation View Context
+// MARK: - Reset Password Confirmation View Params
 
 extension Passage.Views {
 
-    struct ResetPasswordConfirmViewContext: Content {
+    struct ResetPasswordConfirmViewParams: Content {
         let byEmail: Bool
         let byPhone: Bool
         let code: String
@@ -164,11 +164,11 @@ extension Passage.Views {
 
 }
 
-// MARK: - Magic Link Request View Context
+// MARK: - Magic Link Request View Params
 
 extension Passage.Views {
 
-    struct MagicLinkRequestViewContext: Content {
+    struct MagicLinkRequestViewParams: Content {
         let byEmail: Bool
         let error: String?
         let success: String?
@@ -191,11 +191,11 @@ extension Passage.Views {
 
 }
 
-// MARK: - Magic Link Verify View Context
+// MARK: - Magic Link Verify View Params
 
 extension Passage.Views {
 
-    struct MagicLinkVerifyViewContext: Content {
+    struct MagicLinkVerifyViewParams: Content {
         let error: String?
         let success: String?
         let redirectUrl: String?
@@ -218,11 +218,11 @@ extension Passage.Views {
 
 }
 
-// MARK: - OAuth Link Select View Context
+// MARK: - OAuth Link Select View Params
 
 extension Passage.Views {
 
-    struct LinkAccountSelectViewContext: Content {
+    struct LinkAccountSelectViewParams: Content {
 
         struct Candidate: Content {
             let userId: String
@@ -237,11 +237,11 @@ extension Passage.Views {
 
 }
 
-// MARK: - OAuth Link Verify View Context
+// MARK: - OAuth Link Verify View Params
 
 extension Passage.Views {
 
-    struct LinkAccountVerifyViewContext: Content {
+    struct LinkAccountVerifyViewParams: Content {
         let maskedEmail: String?
         let hasPassword: Bool
         let canUseEmailCode: Bool

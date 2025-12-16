@@ -68,7 +68,7 @@ struct ManualLinkingTests {
             federatedLogin: .init(
                 providers: [],
                 accountLinking: .init(
-                    strategy: .manual(allowed: allowedIdentifiers),
+                    resolution: .manual(matchBy: allowedIdentifiers),
                     stateExpiration: 600
                 ),
                 redirectLocation: "/dashboard"
@@ -128,8 +128,8 @@ struct ManualLinkingTests {
             try await configureWithManualLinking(app)
         }) { app in
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "new-user"),
-                provider: "google",
+                identifier: .federated(.google, userId: "new-user"),
+                provider: .google,
                 verifiedEmails: ["nonexistent@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -164,8 +164,8 @@ struct ManualLinkingTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "link-attempt"),
-                provider: "google",
+                identifier: .federated(.google, userId: "link-attempt"),
+                provider: .google,
                 verifiedEmails: ["candidate@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -202,8 +202,8 @@ struct ManualLinkingTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "link-with-views"),
-                provider: "google",
+                identifier: .federated(.google, userId: "link-with-views"),
+                provider: .google,
                 verifiedEmails: ["linkable@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -254,8 +254,8 @@ struct ManualLinkingTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "multi"),
-                provider: "google",
+                identifier: .federated(.google, userId: "multi"),
+                provider: .google,
                 verifiedEmails: [
                     "with-password@example.com",
                     "verified-email@example.com",
@@ -304,8 +304,8 @@ struct ManualLinkingTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "advance-test"),
-                provider: "google",
+                identifier: .federated(.google, userId: "advance-test"),
+                provider: .google,
                 verifiedEmails: ["candidate@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -342,8 +342,8 @@ struct ManualLinkingTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "complete-test"),
-                provider: "google",
+                identifier: .federated(.google, userId: "complete-test"),
+                provider: .google,
                 verifiedEmails: ["candidate@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -381,8 +381,8 @@ struct ManualLinkingTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "verify-test"),
-                provider: "google",
+                identifier: .federated(.google, userId: "verify-test"),
+                provider: .google,
                 verifiedEmails: ["complete-user@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -440,8 +440,8 @@ struct ManualLinkingTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "password-test"),
-                provider: "google",
+                identifier: .federated(.google, userId: "password-test"),
+                provider: .google,
                 verifiedEmails: ["password-user@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -482,8 +482,8 @@ struct ManualLinkingTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "wrong-pw-test"),
-                provider: "google",
+                identifier: .federated(.google, userId: "wrong-pw-test"),
+                provider: .google,
                 verifiedEmails: ["wrong-password@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,

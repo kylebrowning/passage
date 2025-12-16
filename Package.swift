@@ -16,6 +16,7 @@ let package = Package(
         .package(url: "https://github.com/vapor/leaf.git", from: "4.5.1"),
         .package(url: "https://github.com/vapor/leaf-kit.git", from: "1.14.0"),
         .package(url: "https://github.com/vapor/queues.git", from: "1.17.2"),
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin", from: "1.1.0"),
     ],
     targets: [
         .target(

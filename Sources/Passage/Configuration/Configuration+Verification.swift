@@ -3,9 +3,9 @@ import Vapor
 
 // MARK: - Verification Configuration
 
-extension Passage.Configuration {
+public extension Passage.Configuration {
 
-    public struct Verification: Sendable {
+    struct Verification: Sendable {
 
         let email: Email
         let phone: Phone
@@ -26,45 +26,13 @@ extension Passage.Configuration {
 
 // MARK: - Email Verification Configuration
 
-extension Passage.Configuration.Verification {
+public extension Passage.Configuration.Verification {
 
-    public struct Email: Sendable {
+    struct Email: Sendable {
         let routes: Routes
         let codeLength: Int
         let codeExpiration: TimeInterval
         let maxAttempts: Int
-
-        // MARK: Routes
-
-        public struct Routes: Sendable {
-
-            public struct Verify: Sendable {
-                public static let `default` = Verify(path: "email", "verify")
-                let path: [PathComponent]
-                public init(path: PathComponent...) {
-                    self.path = path
-                }
-            }
-
-            public struct Resend: Sendable {
-                public static let `default` = Resend(path: "email", "resend")
-                let path: [PathComponent]
-                public init(path: PathComponent...) {
-                    self.path = path
-                }
-            }
-
-            let verify: Verify
-            let resend: Resend
-
-            public init(
-                verify: Verify = .default,
-                resend: Resend = .default
-            ) {
-                self.verify = verify
-                self.resend = resend
-            }
-        }
 
         public init(
             routes: Routes = .init(),
@@ -81,57 +49,60 @@ extension Passage.Configuration.Verification {
 
 }
 
+// MARK: Email Verification Routes
+
+public extension Passage.Configuration.Verification.Email {
+
+    struct Routes: Sendable {
+
+        public struct Verify: Sendable {
+            public static let `default` = Verify(path: "email", "verify")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
+        public struct Resend: Sendable {
+            public static let `default` = Resend(path: "email", "resend")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
+        let verify: Verify
+        let resend: Resend
+
+        public init(
+            verify: Verify = .default,
+            resend: Resend = .default
+        ) {
+            self.verify = verify
+            self.resend = resend
+        }
+    }
+}
+
+// MARK: Email Verification URLs
+
+extension Passage.Configuration {
+
+    var emailVerificationURL: URL {
+        origin.appending(path: (routes.group + verification.email.routes.verify.path).string)
+    }
+
+}
+
 // MARK: - Phone Verification Configuration
 
-extension Passage.Configuration.Verification {
+public extension Passage.Configuration.Verification {
 
-    public struct Phone: Sendable {
+    struct Phone: Sendable {
         let routes: Routes
         let codeLength: Int
         let codeExpiration: TimeInterval
         let maxAttempts: Int
-
-        // MARK: Routes
-
-        public struct Routes: Sendable {
-            public struct SendCode: Sendable {
-                public static let `default` = SendCode(path: "phone", "send-code")
-                let path: [PathComponent]
-                public init(path: PathComponent...) {
-                    self.path = path
-                }
-            }
-
-            public struct Verify: Sendable {
-                public static let `default` = Verify(path: "phone", "verify")
-                let path: [PathComponent]
-                public init(path: PathComponent...) {
-                    self.path = path
-                }
-            }
-
-            public struct Resend: Sendable {
-                public static let `default` = Resend(path: "phone", "resend")
-                let path: [PathComponent]
-                public init(path: PathComponent...) {
-                    self.path = path
-                }
-            }
-
-            let sendCode: SendCode
-            let verify: Verify
-            let resend: Resend
-
-            public init(
-                sendCode: SendCode = .default,
-                verify: Verify = .default,
-                resend: Resend = .default
-            ) {
-                self.sendCode = sendCode
-                self.verify = verify
-                self.resend = resend
-            }
-        }
 
         public init(
             routes: Routes = .init(),
@@ -148,13 +119,55 @@ extension Passage.Configuration.Verification {
 
 }
 
-// MARK: - Verification URLs
+// MARK: Phone Verification Routes
+
+public extension Passage.Configuration.Verification.Phone {
+
+    struct Routes: Sendable {
+        public struct SendCode: Sendable {
+            public static let `default` = SendCode(path: "phone", "send-code")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
+        public struct Verify: Sendable {
+            public static let `default` = Verify(path: "phone", "verify")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
+        public struct Resend: Sendable {
+            public static let `default` = Resend(path: "phone", "resend")
+            let path: [PathComponent]
+            public init(path: PathComponent...) {
+                self.path = path
+            }
+        }
+
+        let sendCode: SendCode
+        let verify: Verify
+        let resend: Resend
+
+        public init(
+            sendCode: SendCode = .default,
+            verify: Verify = .default,
+            resend: Resend = .default
+        ) {
+            self.sendCode = sendCode
+            self.verify = verify
+            self.resend = resend
+        }
+    }
+
+}
+
+// MARK: Phone Verification Routes
 
 extension Passage.Configuration {
-
-    var emailVerificationURL: URL {
-        origin.appending(path: (routes.group + verification.email.routes.verify.path).string)
-    }
 
     var phoneVerificationURL: URL {
         origin.appending(path: (routes.group + verification.phone.routes.verify.path).string)

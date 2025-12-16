@@ -316,11 +316,11 @@ try await app.passage.configure(
                 )
             ],
             accountLinking: .init(
-                strategy: .automatic(
-                    allowed: [.email, .phone],
+                resolution: .automatic(
+                    matchBy: [.email, .phone],
                     // Links accounts automatically by matching identifiers;
                     // falls back to manual linking when multiple matches exist
-                    fallbackToManualOnMultipleMatches: true
+                    onAmbiguity: .requestManualSelection
                 )
             )
         ),

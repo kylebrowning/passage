@@ -180,7 +180,7 @@ extension Passage.Linking.ManualLinking {
     func createLinkingState(
         identity: FederatedIdentity,
         candidates: [LinkingState.Candidate],
-        provider: String
+        provider: FederatedProvider.Name,
     ) async throws {
         let state = LinkingState(
             federatedIdentifier: identity.identifier,

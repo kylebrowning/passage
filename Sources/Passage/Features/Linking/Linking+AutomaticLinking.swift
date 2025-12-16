@@ -24,7 +24,7 @@ extension Passage.Linking.AutomaticLinking {
     func perform(
         for identity: FederatedIdentity,
         withAllowedIdentifiers kinds: [Identifier.Kind],
-        fallbackToManualOnMultipleMatches: Bool,
+        onAmbiguousMatch resolution: LinkingResolution.AmbiguityResolution,
     ) async throws -> Passage.Linking.Result {
         var users: [any User] = []
         for kind in kinds {
@@ -59,10 +59,13 @@ extension Passage.Linking.AutomaticLinking {
         }
 
         if users.count > 1 {
-            if fallbackToManualOnMultipleMatches {
+            switch resolution {
+            case .requestManualSelection:
                 return try await linking.manual.initiate(for: identity, withAllowedIdentifiers: kinds)
-            } else {
+            case .notifyAndCreateNew:
                 return try .conflict(candidates: users.map { try $0.requiredIdAsString })
+            case .ignoreAndCreateNew:
+                return .skipped
             }
         } else if let user = users.first {
             try await linking.link(federatedIdentifier: identity.identifier, to: user)

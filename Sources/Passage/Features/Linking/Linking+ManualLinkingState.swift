@@ -20,7 +20,7 @@ extension Passage.Linking.ManualLinking {
 
         let federatedIdentifier: Identifier
         let candidates: [Candidate]
-        let provider: String
+        let provider: FederatedProvider.Name
         let createdAt: Date
         let expiresAt: Date
 
@@ -33,7 +33,7 @@ extension Passage.Linking.ManualLinking {
         init(
             federatedIdentifier: Identifier,
             candidates: [Candidate],
-            provider: String,
+            provider: FederatedProvider.Name,
             ttl: TimeInterval
         ) {
             self.federatedIdentifier = federatedIdentifier

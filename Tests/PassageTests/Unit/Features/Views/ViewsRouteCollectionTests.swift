@@ -299,13 +299,13 @@ struct ViewsRouteCollectionTests {
         let routes = Passage.Configuration.Routes()
         let restoration = Passage.Configuration.Restoration()
         let passwordless = Passage.Configuration.Passwordless()
-        let oauth = Passage.Configuration.FederatedLogin(providers: [])
+        let federatedLogin = Passage.Configuration.FederatedLogin(providers: [])
         assertSendable(Passage.Views.RouteCollection(
             config: config,
             routes: routes,
             restoration: restoration,
             passwordless: passwordless,
-            oauth: oauth,
+            federatedLogin: federatedLogin,
             group: []
         ))
     }

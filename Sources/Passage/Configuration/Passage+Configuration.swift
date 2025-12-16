@@ -1,6 +1,8 @@
 import Foundation
 import Vapor
 
+// MARK: - Passage Configuration
+
 extension Passage {
 
     public struct Configuration: Sendable {
@@ -39,10 +41,4 @@ extension Passage {
             self.views = views
         }
     }
-
 }
-
-
-
-
-

@@ -51,12 +51,12 @@ extension Passage.FederatedLogin {
         }
 
         let linkingResult: Passage.Linking.Result
-        switch configuration.accountLinking.strategy {
-        case .automatic(let allowedIdentifiers, let fallbackToManual):
+        switch configuration.accountLinking.resolution {
+        case .automatic(let allowedIdentifiers, let resolution):
             linkingResult = try await request.linking.automatic.perform(
                 for: identity,
                 withAllowedIdentifiers: allowedIdentifiers,
-                fallbackToManualOnMultipleMatches: fallbackToManual
+                onAmbiguousMatch: resolution,
             )
             break
         case .manual(let allowedIdentifiers):
@@ -86,7 +86,7 @@ extension Passage.FederatedLogin {
             )
             return try await completeLogin(for: user)
         case .initiated:
-            return request.redirect(to: "/" + (request.configuration.routes.group + configuration.linkSelectPath).string)
+            return request.redirect(to: "/" + (request.configuration.routes.group + configuration.linkAccountSelectPath).string)
         }
     }
 

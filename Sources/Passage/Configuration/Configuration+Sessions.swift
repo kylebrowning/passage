@@ -1,4 +1,4 @@
-// MARK: - Session
+// MARK: - Sessions
 
 public extension Passage.Configuration {
 

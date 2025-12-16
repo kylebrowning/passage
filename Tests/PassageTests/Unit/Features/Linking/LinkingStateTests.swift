@@ -83,7 +83,7 @@ struct LinkingStateTests {
 
     @Test("LinkingState initializes with correct properties")
     func linkingStateInitialization() {
-        let identifier = Identifier.federated("google", userId: "123")
+        let identifier = Identifier.federated(.google, userId: "123")
         let candidates = [
             Candidate(userId: "u1", email: "a@example.com", phone: nil, hasPassword: true, isEmailVerified: true, isPhoneVerified: false)
         ]
@@ -91,13 +91,13 @@ struct LinkingStateTests {
         let state = LinkingState(
             federatedIdentifier: identifier,
             candidates: candidates,
-            provider: "google",
+            provider: .google,
             ttl: 600
         )
 
         #expect(state.federatedIdentifier.value == identifier.value)
         #expect(state.candidates.count == 1)
-        #expect(state.provider == "google")
+        #expect(state.provider.description == "google")
         #expect(state.selectedUserId == nil)
         #expect(state.sentEmailCode == nil)
         #expect(state.sentPhoneCode == nil)
@@ -108,9 +108,9 @@ struct LinkingStateTests {
         let before = Date()
 
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: 600
         )
 
@@ -126,9 +126,9 @@ struct LinkingStateTests {
         let before = Date().addingTimeInterval(ttl)
 
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: ttl
         )
 
@@ -143,9 +143,9 @@ struct LinkingStateTests {
     @Test("LinkingState isExpired returns false when not expired")
     func isExpiredReturnsFalseWhenValid() {
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: 600 // 10 minutes in the future
         )
 
@@ -155,9 +155,9 @@ struct LinkingStateTests {
     @Test("LinkingState isExpired returns true when expired")
     func isExpiredReturnsTrueWhenExpired() {
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: -60 // 1 minute in the past
         )
 
@@ -169,9 +169,9 @@ struct LinkingStateTests {
     @Test("withSelectedUser returns new state with selected user")
     func withSelectedUser() {
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: 600
         )
 
@@ -191,9 +191,9 @@ struct LinkingStateTests {
     @Test("withEmailCode returns new state with email code")
     func withEmailCode() {
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: 600
         )
 
@@ -212,9 +212,9 @@ struct LinkingStateTests {
     @Test("withPhoneCode returns new state with phone code")
     func withPhoneCode() {
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: 600
         )
 
@@ -230,9 +230,9 @@ struct LinkingStateTests {
     @Test("Chaining update methods")
     func chainingUpdateMethods() {
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: 600
         )
 
@@ -255,9 +255,9 @@ struct LinkingStateTests {
         ]
 
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "abc"),
+            federatedIdentifier: .federated(.google, userId: "abc"),
             candidates: candidates,
-            provider: "google",
+            provider: .google,
             ttl: 600
         )
             .withSelectedUser("u1")
@@ -268,7 +268,7 @@ struct LinkingStateTests {
 
         #expect(decoded.federatedIdentifier.value == state.federatedIdentifier.value)
         #expect(decoded.candidates.count == 2)
-        #expect(decoded.provider == "google")
+        #expect(decoded.provider.description == "google")
         #expect(decoded.selectedUserId == "u1")
         #expect(decoded.sentEmailCode == "TESTCODE")
         #expect(decoded.sentPhoneCode == nil)
@@ -277,9 +277,9 @@ struct LinkingStateTests {
     @Test("LinkingState preserves dates through encoding")
     func linkingStatePreservesDates() throws {
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: 600
         )
 
@@ -296,9 +296,9 @@ struct LinkingStateTests {
     @Test("LinkingState is Sendable")
     func linkingStateIsSendable() {
         let state: any Sendable = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: 600
         )
 
@@ -316,9 +316,9 @@ struct LinkingStateTests {
         ]
 
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "multi"),
+            federatedIdentifier: .federated(.google, userId: "multi"),
             candidates: candidates,
-            provider: "google",
+            provider: .google,
             ttl: 600
         )
 
@@ -331,9 +331,9 @@ struct LinkingStateTests {
     @Test("LinkingState with empty candidates")
     func linkingStateWithEmptyCandidates() {
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "empty"),
+            federatedIdentifier: .federated(.google, userId: "empty"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: 600
         )
 
@@ -345,9 +345,9 @@ struct LinkingStateTests {
     @Test("LinkingState with short TTL (1 minute)")
     func linkingStateWithShortTTL() {
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: 60
         )
 
@@ -359,9 +359,9 @@ struct LinkingStateTests {
     @Test("LinkingState with long TTL (1 hour)")
     func linkingStateWithLongTTL() {
         let state = LinkingState(
-            federatedIdentifier: .federated("google", userId: "123"),
+            federatedIdentifier: .federated(.google, userId: "123"),
             candidates: [],
-            provider: "google",
+            provider: .google,
             ttl: 3600
         )
 

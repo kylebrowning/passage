@@ -52,7 +52,7 @@ extension Passage.Views {
         guard let view = config.login else {
             throw Abort(.notFound)
         }
-        let params = try request.query.decode(LoginViewContext.self)
+        let params = try request.query.decode(LoginViewParams.self)
 
         // Check if magic link is enabled (requires both passwordless backend AND views config)
         let magicLinkEnabled = request.configuration.passwordless.emailMagicLink != nil &&
@@ -113,7 +113,7 @@ extension Passage.Views {
         guard let view = config.register else {
             throw Abort(.notFound)
         }
-        let params = try request.query.decode(RegisterViewContext.self)
+        let params = try request.query.decode(RegisterViewParams.self)
         return try await request.view.render(
             view.template,
             Context(
@@ -164,7 +164,7 @@ extension Passage.Views {
         guard let view = config.passwordResetRequest else {
             throw Abort(.notFound)
         }
-        let params = try request.query.decode(ResetPasswordRequestViewContext.self)
+        let params = try request.query.decode(ResetPasswordRequestViewParams.self)
         return try await request.view.render(
             view.template,
             Context(
@@ -214,7 +214,7 @@ extension Passage.Views {
         guard let view = config.passwordResetConfirm else {
             throw Abort(.notFound)
         }
-        let params = try request.query.decode(ResetPasswordConfirmViewContext.self)
+        let params = try request.query.decode(ResetPasswordConfirmViewParams.self)
         return try await request.view.render(
             view.template,
             Context(
@@ -261,7 +261,7 @@ extension Passage.Views {
         guard let view = config.magicLinkRequest else {
             throw Abort(.notFound)
         }
-        let params = try request.query.decode(MagicLinkRequestViewContext.self)
+        let params = try request.query.decode(MagicLinkRequestViewParams.self)
         return try await request.view.render(
             view.template,
             Context(
@@ -312,7 +312,7 @@ extension Passage.Views {
         guard let view = config.magicLinkVerify else {
             throw Abort(.notFound)
         }
-        let params = try request.query.decode(MagicLinkVerifyViewContext.self)
+        let params = try request.query.decode(MagicLinkVerifyViewParams.self)
         return try await request.view.render(
             view.template,
             Context(
@@ -346,7 +346,7 @@ extension Passage.Views {
             errorMessage = "Failed to verify magic link. Please try again."
             break
         }
-        let params = try request.query.decode(MagicLinkVerifyViewContext.self)
+        let params = try request.query.decode(MagicLinkVerifyViewParams.self)
         return try await request.view.render(
             view.template,
             Context(
@@ -370,8 +370,8 @@ extension Passage.Views {
             throw Abort(.notFound)
         }
         let state = try await request.linking.manual.loadLinkingState()
-        let params = LinkAccountSelectViewContext(
-            provider: state.provider,
+        let params = LinkAccountSelectViewParams(
+            provider: state.provider.description,
             candidates: state.candidates.map {
                 .init(
                     userId: $0.userId,
@@ -434,7 +434,7 @@ extension Passage.Views {
             throw Abort(.badRequest, reason: "Invalid user selection")
         }
 
-        let params = LinkAccountVerifyViewContext(
+        let params = LinkAccountVerifyViewParams(
             maskedEmail: candidate.email.map { maskEmail($0) },
             hasPassword: candidate.hasPassword,
             canUseEmailCode: !candidate.hasPassword && candidate.isEmailVerified,

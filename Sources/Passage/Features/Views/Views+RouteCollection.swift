@@ -62,14 +62,14 @@ extension Passage.Views {
 
             // Select account to link
             if let _ = config.linkAccountSelect {
-                grouped.get(federatedLogin.linkSelectPath) { req in
+                grouped.get(federatedLogin.linkAccountSelectPath) { req in
                     try await req.views.renderLinkAccountSelectView()
                 }
             }
 
             // Verify account to link
             if let _ = config.linkAccountVerify {
-                grouped.get(federatedLogin.linkVerifyPath) { req in
+                grouped.get(federatedLogin.linkAccountVerifyPath) { req in
                     try await req.views.renderLinkAccountVerifyView()
                 }
             }

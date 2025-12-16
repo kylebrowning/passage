@@ -47,7 +47,7 @@ struct LinkingStructTests {
             ),
             federatedLogin: .init(
                 providers: [],
-                accountLinking: .init(strategy: .automatic(allowed: [.email], fallbackToManualOnMultipleMatches: true)),
+                accountLinking: .init(resolution: .automatic(matchBy: [.email], onAmbiguity: .requestManualSelection)),
                 redirectLocation: "/dashboard"
             )
         )
@@ -141,7 +141,7 @@ struct LinkingStructTests {
             )
 
             // Add federated identifier to user1
-            let federatedId = Identifier.federated("google", userId: "shared-id")
+            let federatedId = Identifier.federated(.google, userId: "shared-id")
             try await store.users.addIdentifier(federatedId, to: user1, with: nil)
 
             // Try to link same federated identifier to user2 - should fail
@@ -168,7 +168,7 @@ struct LinkingStructTests {
             )
 
             // Add federated identifier
-            let federatedId = Identifier.federated("google", userId: "user-id")
+            let federatedId = Identifier.federated(.google, userId: "user-id")
             try await store.users.addIdentifier(federatedId, to: user, with: nil)
 
             // Link same identifier to same user - should succeed (no-op)
@@ -193,7 +193,7 @@ struct LinkingStructTests {
                 with: nil
             )
 
-            let federatedId = Identifier.federated("github", userId: "new-github-id")
+            let federatedId = Identifier.federated(.github, userId: "new-github-id")
 
             // Before linking
             let beforeLink = try await store.users.find(byIdentifier: federatedId)

@@ -54,7 +54,7 @@ struct AutomaticLinkingTests {
             ),
             federatedLogin: .init(
                 providers: [],
-                accountLinking: .init(strategy: .automatic(allowed: allowedIdentifiers, fallbackToManualOnMultipleMatches: true)),
+                accountLinking: .init(resolution: .automatic(matchBy: allowedIdentifiers, onAmbiguity: .requestManualSelection)),
                 redirectLocation: "/dashboard"
             )
         )
@@ -112,8 +112,8 @@ struct AutomaticLinkingTests {
         }) { app in
             // Create federated identity with email that doesn't exist in system
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "new-user"),
-                provider: "google",
+                identifier: .federated(.google, userId: "new-user"),
+                provider: .google,
                 verifiedEmails: ["nonexistent@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -125,7 +125,7 @@ struct AutomaticLinkingTests {
             let result = try await request.linking.automatic.perform(
                 for: identity,
                 withAllowedIdentifiers: [.email],
-                fallbackToManualOnMultipleMatches: true
+                onAmbiguousMatch: .requestManualSelection
             )
 
             if case .skipped = result {
@@ -149,8 +149,8 @@ struct AutomaticLinkingTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "link-attempt"),
-                provider: "google",
+                identifier: .federated(.google, userId: "link-attempt"),
+                provider: .google,
                 verifiedEmails: ["unverified@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -161,7 +161,7 @@ struct AutomaticLinkingTests {
             let result = try await request.linking.automatic.perform(
                 for: identity,
                 withAllowedIdentifiers: [.email],
-                fallbackToManualOnMultipleMatches: true
+                onAmbiguousMatch: .requestManualSelection
             )
 
             // Should be skipped because user's email is not verified
@@ -188,8 +188,8 @@ struct AutomaticLinkingTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "link-success"),
-                provider: "google",
+                identifier: .federated(.google, userId: "link-success"),
+                provider: .google,
                 verifiedEmails: ["existing@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -200,7 +200,7 @@ struct AutomaticLinkingTests {
             let result = try await request.linking.automatic.perform(
                 for: identity,
                 withAllowedIdentifiers: [.email],
-                fallbackToManualOnMultipleMatches: true
+                onAmbiguousMatch: .requestManualSelection
             )
 
             if case .complete(let linkedUser) = result {
@@ -225,8 +225,8 @@ struct AutomaticLinkingTests {
             )
 
             let identity = FederatedIdentity(
-                identifier: .federated("auth0", userId: "phone-user"),
-                provider: "auth0",
+                identifier: .federated(.named("auth0"), userId: "phone-user"),
+                provider: .named("auth0"),
                 verifiedEmails: [],
                 verifiedPhoneNumbers: ["+1234567890"],
                 displayName: nil,
@@ -237,7 +237,7 @@ struct AutomaticLinkingTests {
             let result = try await request.linking.automatic.perform(
                 for: identity,
                 withAllowedIdentifiers: [.phone],
-                fallbackToManualOnMultipleMatches: true
+                onAmbiguousMatch: .requestManualSelection
             )
 
             if case .complete(let linkedUser) = result {
@@ -270,8 +270,8 @@ struct AutomaticLinkingTests {
 
             // Federated identity has both emails
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "multi-email"),
-                provider: "google",
+                identifier: .federated(.google, userId: "multi-email"),
+                provider: .google,
                 verifiedEmails: ["user1@example.com", "user2@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -282,7 +282,7 @@ struct AutomaticLinkingTests {
             let result = try await request.linking.automatic.perform(
                 for: identity,
                 withAllowedIdentifiers: [.email],
-                fallbackToManualOnMultipleMatches: false
+                onAmbiguousMatch: .notifyAndCreateNew,
             )
 
             if case .conflict(let candidates) = result {
@@ -312,8 +312,8 @@ struct AutomaticLinkingTests {
 
             // Identity has matching phone but email is allowed only
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "phone-only"),
-                provider: "google",
+                identifier: .federated(.google, userId: "phone-only"),
+                provider: .google,
                 verifiedEmails: [],
                 verifiedPhoneNumbers: ["+1234567890"],
                 displayName: nil,
@@ -324,7 +324,7 @@ struct AutomaticLinkingTests {
             let result = try await request.linking.automatic.perform(
                 for: identity,
                 withAllowedIdentifiers: [.email], // Only email allowed
-                fallbackToManualOnMultipleMatches: true,
+                onAmbiguousMatch: .requestManualSelection,
             )
 
             // Should skip because phone is not in allowed identifiers
@@ -350,8 +350,8 @@ struct AutomaticLinkingTests {
 
             // Identity has only phone (no email)
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "phone-link"),
-                provider: "google",
+                identifier: .federated(.google, userId: "phone-link"),
+                provider: .google,
                 verifiedEmails: [],
                 verifiedPhoneNumbers: ["+9876543210"],
                 displayName: nil,
@@ -362,7 +362,7 @@ struct AutomaticLinkingTests {
             let result = try await request.linking.automatic.perform(
                 for: identity,
                 withAllowedIdentifiers: [.email, .phone],
-                fallbackToManualOnMultipleMatches: true,
+                onAmbiguousMatch: .requestManualSelection,
             )
 
             if case .complete(let linkedUser) = result {
@@ -381,8 +381,8 @@ struct AutomaticLinkingTests {
             try await configureWithAutomaticLinking(app)
         }) { app in
             let identity = FederatedIdentity(
-                identifier: .federated("apple", userId: "no-email"),
-                provider: "apple",
+                identifier: .federated(.named("apple"), userId: "no-email"),
+                provider: .named("apple"),
                 verifiedEmails: [], // Apple sometimes doesn't share email
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -393,7 +393,7 @@ struct AutomaticLinkingTests {
             let result = try await request.linking.automatic.perform(
                 for: identity,
                 withAllowedIdentifiers: [.email],
-                fallbackToManualOnMultipleMatches: true
+                onAmbiguousMatch: .requestManualSelection
             )
 
             if case .skipped = result {
@@ -410,8 +410,8 @@ struct AutomaticLinkingTests {
             try await configureWithAutomaticLinking(app)
         }) { app in
             let identity = FederatedIdentity(
-                identifier: .federated("google", userId: "test"),
-                provider: "google",
+                identifier: .federated(.google, userId: "test"),
+                provider: .google,
                 verifiedEmails: ["test@example.com"],
                 verifiedPhoneNumbers: [],
                 displayName: nil,
@@ -425,7 +425,7 @@ struct AutomaticLinkingTests {
             let result = try await request.linking.automatic.perform(
                 for: identity,
                 withAllowedIdentifiers: [.username, .federated],
-                fallbackToManualOnMultipleMatches: true
+                onAmbiguousMatch: .requestManualSelection
             )
 
             if case .skipped = result {

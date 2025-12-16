@@ -173,7 +173,7 @@ public extension Passage.OnlyForTest.InMemoryStore {
         ) async throws -> any User {
             // Build the identifier key - federated identifiers include provider
             let identifierKey = identifier.kind == .federated
-                ? "\(identifier.provider ?? ""):\(identifier.value)"
+                ? "\(identifier.provider?.description ?? ""):\(identifier.value)"
                 : identifier.value
 
             // Check for duplicate identifier
@@ -205,7 +205,7 @@ public extension Passage.OnlyForTest.InMemoryStore {
         public func find(byIdentifier identifier: Identifier) async throws -> (any User)? {
             // Build the same key format as addIdentifier for consistency
             let identifierKey = identifier.kind == .federated
-                ? "\(identifier.provider ?? ""):\(identifier.value)"
+                ? "\(identifier.provider?.description ?? ""):\(identifier.value)"
                 : identifier.value
 
             guard let userId = identifierIndex[identifierKey] else {
@@ -240,7 +240,7 @@ public extension Passage.OnlyForTest.InMemoryStore {
 
             // Check for duplicate identifier
             let identifierKey = identifier.kind == .federated
-                ? "\(identifier.provider ?? ""):\(identifier.value)"
+                ? "\(identifier.provider?.description ?? ""):\(identifier.value)"
                 : identifier.value
 
             if identifierIndex[identifierKey] != nil {

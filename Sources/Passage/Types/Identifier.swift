@@ -9,7 +9,7 @@ public struct Identifier: Codable, Sendable, Equatable {
 
     public let kind: Kind
     public let value: String
-    public let provider: String?
+    public let provider: FederatedProvider.Name?
 
 }
 
@@ -29,7 +29,7 @@ public extension Identifier {
         return Identifier(kind: .username, value: username, provider: nil)
     }
 
-    static func federated(_ provider: String, userId: String) -> Identifier {
+    static func federated(_ provider: FederatedProvider.Name, userId: String) -> Identifier {
         return Identifier(kind: .federated, value: userId, provider: provider)
     }
 

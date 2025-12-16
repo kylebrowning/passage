@@ -14,7 +14,7 @@ extension Passage.Linking {
             let grouped = group.isEmpty ? builder : builder.grouped(configuration.routes.group)
 
             // Handle a form sent from the Link Account Select view
-            grouped.post(configuration.federatedLogin.linkSelectPath) { req in
+            grouped.post(configuration.federatedLogin.linkAccountSelectPath) { req in
                 do {
                     let form = try req.decodeContentAsFormOfType(req.contracts.linkAccountSelectForm)
 
@@ -26,7 +26,7 @@ extension Passage.Linking {
 
                     return req.views.handleLinkAccountSelectFormSubmit(
                         of: view,
-                        at: group + configuration.federatedLogin.linkVerifyPath,
+                        at: group + configuration.federatedLogin.linkAccountVerifyPath,
                     )
                 } catch {
                     guard req.isFormSubmission, req.isWaitingForHTML, let view = req.configuration.views.linkAccountSelect else {
@@ -35,14 +35,14 @@ extension Passage.Linking {
 
                     return req.views.handleLinkAccountSelectFormFailure(
                         of: view,
-                        at: group + configuration.federatedLogin.linkSelectPath,
+                        at: group + configuration.federatedLogin.linkAccountSelectPath,
                         with: error
                     )
                 }
             }
 
             // Handle a form sent from the Link Account Verify view
-            grouped.post(configuration.federatedLogin.linkVerifyPath) { req in
+            grouped.post(configuration.federatedLogin.linkAccountVerifyPath) { req in
                 do {
                     let form = try req.decodeContentAsFormOfType(req.contracts.linkAccountVerifyForm)
 
@@ -61,7 +61,7 @@ extension Passage.Linking {
 
                     return req.views.handleLinkAccountVerifyFormSubmit(
                         of: view,
-                        at: group + configuration.federatedLogin.linkVerifyPath,
+                        at: group + configuration.federatedLogin.linkAccountVerifyPath,
                     )
                 } catch {
                     guard req.isFormSubmission, req.isWaitingForHTML, let view = req.configuration.views.linkAccountVerify else {
@@ -70,7 +70,7 @@ extension Passage.Linking {
 
                     return req.views.handleLinkAccountVerifyFormFailure(
                         of: view,
-                        at: group + configuration.federatedLogin.linkVerifyPath,
+                        at: group + configuration.federatedLogin.linkAccountVerifyPath,
                         with: error
                     )
                 }

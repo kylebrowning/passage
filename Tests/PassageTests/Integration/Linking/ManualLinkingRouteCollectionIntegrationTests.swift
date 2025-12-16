@@ -92,7 +92,7 @@ struct ManualLinkingRouteCollectionIntegrationTests {
             federatedLogin: .init(
                 providers: [],
                 accountLinking: .init(
-                    strategy: .manual(allowed: allowedIdentifiers),
+                    resolution: .manual(matchBy: allowedIdentifiers),
                     stateExpiration: 600
                 ),
                 redirectLocation: "/dashboard"
@@ -125,8 +125,8 @@ struct ManualLinkingRouteCollectionIntegrationTests {
             let body = try req.content.decode(InitiateRequest.self)
 
             let identity = FederatedIdentity(
-                identifier: .federated(body.provider, userId: body.userId),
-                provider: body.provider,
+                identifier: .federated(.named(body.provider), userId: body.userId),
+                provider: .named(body.provider),
                 verifiedEmails: body.verifiedEmails,
                 verifiedPhoneNumbers: body.verifiedPhones,
                 displayName: nil,
@@ -515,7 +515,7 @@ struct ManualLinkingRouteCollectionIntegrationTests {
             // Verify: Federated identifier is now linked to user
             let store = app.passage.storage.services.store
             let federatedUser = try await store.users.find(
-                byIdentifier: .federated("github", userId: "github-user-456")
+                byIdentifier: .federated(.github, userId: "github-user-456")
             )
             #expect(federatedUser != nil)
             #expect(federatedUser?.id?.description == userId)
@@ -861,7 +861,7 @@ struct ManualLinkingRouteCollectionIntegrationTests {
             // Verify federated identity linked to user2
             let store = app.passage.storage.services.store
             let linkedUser = try await store.users.find(
-                byIdentifier: .federated("google", userId: "select-multi")
+                byIdentifier: .federated(.google, userId: "select-multi")
             )
             #expect(linkedUser != nil)
             #expect(linkedUser?.email == "select2@example.com")
@@ -975,7 +975,7 @@ struct ManualLinkingRouteCollectionIntegrationTests {
             // Verify linking
             let store = app.passage.storage.services.store
             let linkedUser = try await store.users.find(
-                byIdentifier: .federated("google", userId: "phone-some")
+                byIdentifier: .federated(.google, userId: "phone-some")
             )
             #expect(linkedUser != nil)
             #expect(linkedUser?.phone == "+15551234567")
@@ -1320,7 +1320,7 @@ struct ManualLinkingRouteCollectionIntegrationTests {
             // Verify: Federated identifier is now linked to user
             let store = app.passage.storage.services.store
             let federatedUser = try await store.users.find(
-                byIdentifier: .federated("github", userId: "html-full-flow-some")
+                byIdentifier: .federated(.github, userId: "html-full-flow-some")
             )
             #expect(federatedUser != nil)
             #expect(federatedUser?.id?.description == userId)

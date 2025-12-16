@@ -5,27 +5,6 @@ import Vapor
 public extension Passage.Configuration {
 
     struct Views: Sendable {
-
-        protocol View: Sendable {
-            var name: String { get }
-            var style: Passage.Views.Style { get }
-            var theme: Passage.Views.Theme { get }
-            var redirect: Redirect { get }
-        }
-
-        public struct Redirect: Sendable {
-            let onSuccess: String?
-            let onFailure: String?
-
-            public init(
-                onSuccess: String? = nil,
-                onFailure: String? = nil,
-            ) {
-                self.onSuccess = onSuccess
-                self.onFailure = onFailure
-            }
-        }
-
         let register: RegisterView?
         let login: LoginView?
         let passwordResetRequest: PasswordResetRequestView?
@@ -55,7 +34,6 @@ public extension Passage.Configuration {
             self.linkAccountVerify = linkAccountVerify
         }
     }
-
 }
 
 // MARK: Views Extension
@@ -74,6 +52,18 @@ extension Passage.Configuration.Views {
     }
 }
 
+// MARK: - View Protocol
+
+extension Passage.Configuration.Views {
+
+    protocol View: Sendable {
+        var name: String { get }
+        var style: Passage.Views.Style { get }
+        var theme: Passage.Views.Theme { get }
+        var redirect: Redirect { get }
+    }
+}
+
 // MARK: View Template Extension
 
 extension Passage.Configuration.Views.View {
@@ -83,12 +73,30 @@ extension Passage.Configuration.Views.View {
     }
 }
 
-// MARK: - Login View
+//
 
 public extension Passage.Configuration.Views {
 
-    struct LoginView: Sendable, View {
-        let name: String = "login"
+    struct Redirect: Sendable {
+        let onSuccess: String?
+        let onFailure: String?
+
+        public init(
+            onSuccess: String? = nil,
+            onFailure: String? = nil,
+        ) {
+            self.onSuccess = onSuccess
+            self.onFailure = onFailure
+        }
+    }
+}
+
+// MARK: - Register View
+
+public extension Passage.Configuration.Views {
+
+    struct RegisterView: Sendable, View {
+        let name: String = "register"
         let style: Passage.Views.Style
         let theme: Passage.Views.Theme
         let redirect: Redirect
@@ -109,12 +117,12 @@ public extension Passage.Configuration.Views {
 
 }
 
-// MARK: - Register View
+// MARK: - Login View
 
 public extension Passage.Configuration.Views {
 
-    struct RegisterView: Sendable, View {
-        let name: String = "register"
+    struct LoginView: Sendable, View {
+        let name: String = "login"
         let style: Passage.Views.Style
         let theme: Passage.Views.Theme
         let redirect: Redirect
