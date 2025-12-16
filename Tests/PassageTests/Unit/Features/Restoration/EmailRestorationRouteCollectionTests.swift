@@ -299,4 +299,15 @@ struct EmailRestorationRouteCollectionTests {
         #expect(!verifyPath.isEmpty)
         #expect(!resendPath.isEmpty)
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("Restoration.EmailRouteCollection conforms to Sendable")
+    func conformsToSendable() {
+        let routes = Passage.Configuration.Restoration.Email.Routes()
+        assertSendable(Passage.Restoration.EmailRouteCollection(routes: routes, group: []))
+    }
 }

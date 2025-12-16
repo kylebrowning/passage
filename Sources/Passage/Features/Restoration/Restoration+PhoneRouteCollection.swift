@@ -2,7 +2,7 @@ import Vapor
 
 extension Passage.Restoration {
 
-    struct PhoneRouteCollection: Vapor.RouteCollection {
+    struct PhoneRouteCollection: Vapor.RouteCollection, Sendable {
 
         let routes: Passage.Configuration.Restoration.Phone.Routes
         let groupPath: [PathComponent]

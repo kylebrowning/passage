@@ -129,4 +129,19 @@ struct PassageErrorTests {
 
         #expect(error1.reason != error2.reason)
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    /// If the type doesn't conform to Sendable, passing it to this function
+    /// will cause a compile-time error.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("PassageError conforms to Sendable")
+    func conformsToSendable() {
+        assertSendable(PassageError.notConfigured)
+        assertSendable(PassageError.storeNotConfigured)
+        assertSendable(PassageError.missingEnvironmentVariable(name: "TEST"))
+        assertSendable(PassageError.unexpected(message: "test"))
+    }
 }

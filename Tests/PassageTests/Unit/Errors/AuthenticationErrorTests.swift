@@ -304,4 +304,18 @@ struct AuthenticationErrorTests {
             #expect(error.reason.hasSuffix("."))
         }
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    /// If the type doesn't conform to Sendable, passing it to this function
+    /// will cause a compile-time error.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("AuthenticationError conforms to Sendable")
+    func conformsToSendable() {
+        assertSendable(AuthenticationError.invalidEmailOrPassword)
+        assertSendable(AuthenticationError.userNotFound)
+        assertSendable(AuthenticationError.emailAlreadyRegistered)
+    }
 }

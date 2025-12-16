@@ -253,4 +253,28 @@ struct AuthUserTests {
         #expect(user.email == "test@example.com")
         #expect(user.phone == "+1234567890")
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("AuthUser conforms to Sendable")
+    func authUserConformsToSendable() {
+        let user = AuthUser.User(id: "123", email: "test@example.com", phone: nil)
+        let authUser = AuthUser(
+            accessToken: "token",
+            refreshToken: "refresh",
+            tokenType: "Bearer",
+            expiresIn: 3600,
+            user: user
+        )
+        assertSendable(authUser)
+    }
+
+    @Test("AuthUser.User conforms to Sendable")
+    func authUserUserConformsToSendable() {
+        let user = AuthUser.User(id: "123", email: "test@example.com", phone: nil)
+        assertSendable(user)
+    }
 }

@@ -343,4 +343,76 @@ struct ViewsContextsTests {
         #expect(original.success == nil)
         #expect(copy.success == "Success!")
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("LoginViewContext conforms to Sendable")
+    func loginViewContextConformsToSendable() {
+        assertSendable(Passage.Views.LoginViewContext(
+            byEmail: true, byPhone: false, byUsername: false,
+            withApple: false, withGoogle: false, withGitHub: false,
+            error: nil, success: nil, registerLink: nil, resetPasswordLink: nil,
+            byEmailMagicLink: nil, magicLinkRequestLink: nil
+        ))
+    }
+
+    @Test("RegisterViewContext conforms to Sendable")
+    func registerViewContextConformsToSendable() {
+        assertSendable(Passage.Views.RegisterViewContext(
+            byEmail: true, byPhone: false, byUsername: false,
+            withApple: false, withGoogle: false, withGitHub: false,
+            error: nil, success: nil, loginLink: nil
+        ))
+    }
+
+    @Test("ResetPasswordRequestViewContext conforms to Sendable")
+    func resetPasswordRequestViewContextConformsToSendable() {
+        assertSendable(Passage.Views.ResetPasswordRequestViewContext(
+            byEmail: true, byPhone: false, error: nil, success: nil
+        ))
+    }
+
+    @Test("ResetPasswordConfirmViewContext conforms to Sendable")
+    func resetPasswordConfirmViewContextConformsToSendable() {
+        assertSendable(Passage.Views.ResetPasswordConfirmViewContext(
+            byEmail: true, byPhone: false, code: "123456",
+            email: "test@example.com", error: nil, success: nil
+        ))
+    }
+
+    @Test("MagicLinkRequestViewContext conforms to Sendable")
+    func magicLinkRequestViewContextConformsToSendable() {
+        assertSendable(Passage.Views.MagicLinkRequestViewContext(
+            byEmail: true, error: nil, success: nil, identifier: nil
+        ))
+    }
+
+    @Test("MagicLinkVerifyViewContext conforms to Sendable")
+    func magicLinkVerifyViewContextConformsToSendable() {
+        assertSendable(Passage.Views.MagicLinkVerifyViewContext(
+            error: nil, success: nil, redirectUrl: nil, loginLink: nil
+        ))
+    }
+
+    @Test("OAuthLinkSelectViewContext conforms to Sendable")
+    func oAuthLinkSelectViewContextConformsToSendable() {
+        let candidate = Passage.Views.OAuthLinkSelectViewContext.Candidate(
+            userId: "user123", maskedEmail: "t***@example.com", maskedPhone: nil
+        )
+        assertSendable(candidate)
+        assertSendable(Passage.Views.OAuthLinkSelectViewContext(
+            provider: "google", candidates: [candidate], error: nil
+        ))
+    }
+
+    @Test("OAuthLinkVerifyViewContext conforms to Sendable")
+    func oAuthLinkVerifyViewContextConformsToSendable() {
+        assertSendable(Passage.Views.OAuthLinkVerifyViewContext(
+            maskedEmail: "t***@example.com", hasPassword: true,
+            canUseEmailCode: true, error: nil
+        ))
+    }
 }

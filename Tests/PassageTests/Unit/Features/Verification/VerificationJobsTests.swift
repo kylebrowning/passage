@@ -453,4 +453,38 @@ struct VerificationJobsTests {
                 == Passage.Verification.SendPhoneCodePayload.self
         )
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("SendEmailCodePayload conforms to Sendable")
+    func sendEmailCodePayloadConformsToSendable() {
+        assertSendable(Passage.Verification.SendEmailCodePayload(
+            email: "test@example.com",
+            userId: "user123",
+            verificationURL: URL(string: "https://example.com/verify")!,
+            verificationCode: "123456"
+        ))
+    }
+
+    @Test("SendEmailCodeJob conforms to Sendable")
+    func sendEmailCodeJobConformsToSendable() {
+        assertSendable(Passage.Verification.SendEmailCodeJob())
+    }
+
+    @Test("SendPhoneCodePayload conforms to Sendable")
+    func sendPhoneCodePayloadConformsToSendable() {
+        assertSendable(Passage.Verification.SendPhoneCodePayload(
+            phone: "+1234567890",
+            code: "123456",
+            userId: "user123"
+        ))
+    }
+
+    @Test("SendPhoneCodeJob conforms to Sendable")
+    func sendPhoneCodeJobConformsToSendable() {
+        assertSendable(Passage.Verification.SendPhoneCodeJob())
+    }
 }

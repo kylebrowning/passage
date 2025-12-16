@@ -287,4 +287,26 @@ struct ViewsRouteCollectionTests {
             #expect(collection.group[index] == component)
         }
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("Views.RouteCollection conforms to Sendable")
+    func conformsToSendable() {
+        let config = Passage.Configuration.Views()
+        let routes = Passage.Configuration.Routes()
+        let restoration = Passage.Configuration.Restoration()
+        let passwordless = Passage.Configuration.Passwordless()
+        let oauth = Passage.Configuration.FederatedLogin(providers: [])
+        assertSendable(Passage.Views.RouteCollection(
+            config: config,
+            routes: routes,
+            restoration: restoration,
+            passwordless: passwordless,
+            oauth: oauth,
+            group: []
+        ))
+    }
 }

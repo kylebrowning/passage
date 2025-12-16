@@ -2,7 +2,7 @@ import Vapor
 
 extension Passage.Verification {
 
-    struct PhoneRouteCollection: Vapor.RouteCollection {
+    struct PhoneRouteCollection: Vapor.RouteCollection, Sendable {
 
         let config: Passage.Configuration.Verification.Phone
         let groupPath: [PathComponent]

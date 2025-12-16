@@ -6,7 +6,7 @@ import LeafKit
 
 public extension Passage {
 
-    struct Views {
+    struct Views: Sendable {
         let request: Request
         let config: Configuration.Views
     }

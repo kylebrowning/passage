@@ -319,4 +319,20 @@ struct PhoneRestorationRouteCollectionTests {
         // They should have different types and different group names
         #expect(phoneCollection.groupPath != emailCollection.group)
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("Restoration.PhoneRouteCollection conforms to Sendable")
+    func conformsToSendable() {
+        let routes = Passage.Configuration.Restoration.Phone.Routes()
+        assertSendable(Passage.Restoration.PhoneRouteCollection(routes: routes, groupPath: []))
+    }
+
+    @Test("Restoration.PhoneRouteCollection.ResendForm conforms to Sendable")
+    func resendFormConformsToSendable() {
+        assertSendable(Passage.Restoration.PhoneRouteCollection.ResendForm(phone: "+1234567890"))
+    }
 }

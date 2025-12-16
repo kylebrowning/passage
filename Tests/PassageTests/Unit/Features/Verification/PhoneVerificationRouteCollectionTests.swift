@@ -408,4 +408,15 @@ struct PhoneVerificationRouteCollectionTests {
         #expect(collection.config.routes.resend.path == ["custom-resend-code"])
         #expect(collection.groupPath.count == 3)
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("Verification.PhoneRouteCollection conforms to Sendable")
+    func conformsToSendable() {
+        let config = Passage.Configuration.Verification.Phone()
+        assertSendable(Passage.Verification.PhoneRouteCollection(config: config, groupPath: []))
+    }
 }

@@ -191,4 +191,15 @@ struct TokensRouteCollectionTests {
         #expect(collection.routes.group.count == 2)
         #expect(collection.routes.exchangeCode.path.count == 2)
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("Tokens.RouteCollection conforms to Sendable")
+    func conformsToSendable() {
+        let routes = Passage.Configuration.Routes()
+        assertSendable(Passage.Tokens.RouteCollection(routes: routes))
+    }
 }

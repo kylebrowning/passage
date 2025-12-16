@@ -458,4 +458,38 @@ struct RestorationJobsTests {
                 == Passage.Restoration.PhonePasswordResetCodePayload.self
         )
     }
+
+    // MARK: - Sendable Conformance Tests
+
+    /// Helper function that requires Sendable conformance.
+    private func assertSendable<T: Sendable>(_ value: T) {}
+
+    @Test("EmailPasswordResetCodePayload conforms to Sendable")
+    func emailPasswordResetCodePayloadConformsToSendable() {
+        assertSendable(Passage.Restoration.EmailPasswordResetCodePayload(
+            email: "test@example.com",
+            userId: "user123",
+            resetURL: URL(string: "https://example.com/reset")!,
+            resetCode: "123456"
+        ))
+    }
+
+    @Test("SendEmailPasswordResetCodeJob conforms to Sendable")
+    func sendEmailPasswordResetCodeJobConformsToSendable() {
+        assertSendable(Passage.Restoration.SendEmailPasswordResetCodeJob())
+    }
+
+    @Test("PhonePasswordResetCodePayload conforms to Sendable")
+    func phonePasswordResetCodePayloadConformsToSendable() {
+        assertSendable(Passage.Restoration.PhonePasswordResetCodePayload(
+            phone: "+1234567890",
+            code: "123456",
+            userId: "user123"
+        ))
+    }
+
+    @Test("SendPhonePasswordResetCodeJob conforms to Sendable")
+    func sendPhonePasswordResetCodeJobConformsToSendable() {
+        assertSendable(Passage.Restoration.SendPhonePasswordResetCodeJob())
+    }
 }
