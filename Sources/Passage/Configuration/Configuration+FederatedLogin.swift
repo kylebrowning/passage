@@ -51,7 +51,7 @@ public extension Passage.Configuration.FederatedLogin {
         public let provider: FederatedProvider
         public let routes: Routes
 
-        init(
+        public init(
             provider: FederatedProvider,
             routes: Routes? = nil,
         ) {
@@ -88,22 +88,22 @@ public extension Passage.Configuration.FederatedLogin.Provider {
 
     struct Routes: Sendable {
 
-        struct Login: Sendable {
+        public struct Login: Sendable {
             let path: [PathComponent]
-            init(path: PathComponent...) {
+            public init(path: PathComponent...) {
                 self.path = path
             }
-            init(path: [PathComponent]) {
+            public init(path: [PathComponent]) {
                 self.path = path
             }
         }
 
-        struct Callback: Sendable {
+        public struct Callback: Sendable {
             let path: [PathComponent]
-            init(path: PathComponent...) {
+            public init(path: PathComponent...) {
                 self.path = path
             }
-            init(path: [PathComponent]) {
+            public init(path: [PathComponent]) {
                 self.path = path
             }
         }
@@ -111,7 +111,7 @@ public extension Passage.Configuration.FederatedLogin.Provider {
         let login: Login
         let callback: Callback
 
-        init(
+        public init(
             login: Login = .init(),
             callback: Callback = .init(path: "callback")
         ) {

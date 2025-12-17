@@ -24,7 +24,7 @@ struct ViewsThemeTests {
         let theme = Passage.Views.Theme(colors: colors)
 
         #expect(theme.colors.primary == colors.primary)
-        #expect(theme.orverrides.isEmpty)
+        #expect(theme.overrides.isEmpty)
     }
 
     @Test("Theme initialization with overrides")
@@ -40,7 +40,7 @@ struct ViewsThemeTests {
         )
 
         #expect(theme.colors.primary == lightColors.primary)
-        #expect(!theme.orverrides.isEmpty)
+        #expect(!theme.overrides.isEmpty)
     }
 
     // MARK: - Theme Resolution Tests

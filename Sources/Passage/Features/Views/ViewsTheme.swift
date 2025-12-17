@@ -11,6 +11,10 @@ extension Passage.Views {
 
         public struct Override : Sendable{
             let colors: Colors?
+
+            public init(colors: Colors?) {
+                self.colors = colors
+            }
         }
 
         public struct Colors: Sendable, Encodable {
@@ -30,18 +34,54 @@ extension Passage.Views {
             let success: String
             let onSuccess: String
             let outline: String
+
+            public init(
+                primary: String,
+                onPrimary: String,
+                secondary: String,
+                onSecondary: String,
+                surface: String,
+                onSurface: String,
+                onSurfaceVariant: String,
+                background: String,
+                onBackground: String,
+                error: String,
+                onError: String,
+                warning: String,
+                onWarning: String,
+                success: String,
+                onSuccess: String,
+                outline: String
+            ) {
+                self.primary = primary
+                self.onPrimary = onPrimary
+                self.secondary = secondary
+                self.onSecondary = onSecondary
+                self.surface = surface
+                self.onSurface = onSurface
+                self.onSurfaceVariant = onSurfaceVariant
+                self.background = background
+                self.onBackground = onBackground
+                self.error = error
+                self.onError = onError
+                self.warning = warning
+                self.onWarning = onWarning
+                self.success = success
+                self.onSuccess = onSuccess
+                self.outline = outline
+            }
         }
 
         let colors: Colors
 
-        let orverrides: [Brightness: Override]
+        let overrides: [Brightness: Override]
 
         public init(
             colors: Colors,
             overrides: [Brightness: Override] = [:]
         ) {
             self.colors = colors
-            self.orverrides = overrides
+            self.overrides = overrides
         }
 
     }
@@ -52,7 +92,7 @@ extension Passage.Views {
 extension Passage.Views.Theme {
 
     func colors(for brightness: Brightness) -> Colors {
-        return orverrides[brightness]?.colors ?? self.colors
+        return overrides[brightness]?.colors ?? self.colors
     }
 
     func resolve(for brightness: Brightness) -> Resolved {
