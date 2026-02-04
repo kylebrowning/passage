@@ -1,5 +1,6 @@
 import Vapor
 import JWT
+import WebAuthn
 
 public struct Passage: Sendable {
 
@@ -95,6 +96,20 @@ public struct Passage: Sendable {
         // Register passwordless jobs if queues are enabled
         if configuration.passwordless.emailMagicLink?.useQueues == true {
             app.queues.add(Passwordless.SendEmailMagicLinkJob())
+        }
+
+        if let passkey = configuration.passkey {
+            app.webAuthn = WebAuthnManager(
+                configuration: .init(
+                    relyingPartyID: passkey.relyingPartyID,
+                    relyingPartyName: passkey.relyingPartyName,
+                    relyingPartyOrigin: passkey.relyingPartyOrigin
+                )
+            )
+            try app.register(collection: Passkey.RouteCollection(
+                routes: passkey.routes,
+                group: configuration.routes.group
+            ))
         }
 
         try FederatedLoginHandler(app: app, configuration: configuration).register()

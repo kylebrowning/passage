@@ -53,6 +53,13 @@ public enum AuthenticationError: Error {
     // Federated account errors
     case federatedAccountAlreadyLinked
     case federatedLoginFailed
+
+    // Passkey errors
+    case passkeyRegistrationFailed
+    case passkeyAuthenticationFailed
+    case passkeyCredentialNotFound
+    case passkeyChallengeNotFound
+    case passkeyNotConfigured
 }
 
 extension AuthenticationError: AbortError {
@@ -100,6 +107,14 @@ extension AuthenticationError: AbortError {
             return .conflict
         case .federatedLoginFailed:
             return .unauthorized
+        case .passkeyRegistrationFailed, .passkeyAuthenticationFailed:
+            return .unauthorized
+        case .passkeyCredentialNotFound:
+            return .notFound
+        case .passkeyChallengeNotFound:
+            return .badRequest
+        case .passkeyNotConfigured:
+            return .internalServerError
         }
     }
 
@@ -171,6 +186,16 @@ extension AuthenticationError: AbortError {
             return "This federated account is already linked to another user."
         case .federatedLoginFailed:
             return "Federated login failed."
+        case .passkeyRegistrationFailed:
+            return "Passkey registration failed."
+        case .passkeyAuthenticationFailed:
+            return "Passkey authentication failed."
+        case .passkeyCredentialNotFound:
+            return "Passkey credential not found."
+        case .passkeyChallengeNotFound:
+            return "Passkey challenge not found or expired."
+        case .passkeyNotConfigured:
+            return "Passkey authentication is not configured."
         }
     }
 }

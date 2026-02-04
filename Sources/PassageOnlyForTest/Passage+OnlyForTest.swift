@@ -11,14 +11,25 @@ public extension Passage {
             public let restorationCodes: any Passage.RestorationCodeStore
             public let magicLinkTokens: any Passage.MagicLinkTokenStore
             public let exchangeTokens: any Passage.ExchangeTokenStore
+            public let passkeyCredentials: (any Passage.PasskeyCredentialStore)?
+            public let passkeyChallenges: (any Passage.PasskeyChallengeStore)?
 
-            public init() {
+            public init(
+                enablePasskey: Bool = false
+            ) {
                 self.users = InMemoryUserStore()
                 self.tokens = InMemoryTokenStore()
                 self.verificationCodes = InMemoryVerificationStore()
                 self.restorationCodes = InMemoryRestorationStore()
                 self.magicLinkTokens = InMemoryMagicLinkTokenStore()
                 self.exchangeTokens = InMemoryExchangeTokenStore()
+                if enablePasskey {
+                    self.passkeyCredentials = InMemoryPasskeyCredentialStore()
+                    self.passkeyChallenges = InMemoryPasskeyChallengeStore()
+                } else {
+                    self.passkeyCredentials = nil
+                    self.passkeyChallenges = nil
+                }
             }
         }
 

@@ -23,6 +23,9 @@ public extension Passage {
         let emailMagicLinkResendForm: any EmailMagicLinkResendForm.Type
         let linkAccountSelectForm: any LinkAccountSelectForm.Type
         let linkAccountVerifyForm: any LinkAccountVerifyForm.Type
+        let passkeySignupBeginForm: any PasskeySignupBeginForm.Type
+        let passkeyAuthenticationFinishForm: any PasskeyAuthenticationFinishForm.Type
+        let passkeySignupFinishForm: any PasskeySignupFinishForm.Type
 
         public init(
             loginForm: (any LoginForm.Type)? = nil,
@@ -45,6 +48,9 @@ public extension Passage {
             emailMagicLinkResendForm: (any EmailMagicLinkResendForm.Type)? = nil,
             linkAccountSelectForm: (any LinkAccountSelectForm.Type)? = nil,
             linkAccountVerifyForm: (any LinkAccountVerifyForm.Type)? = nil,
+            passkeySignupBeginForm: (any PasskeySignupBeginForm.Type)? = nil,
+            passkeyAuthenticationFinishForm: (any PasskeyAuthenticationFinishForm.Type)? = nil,
+            passkeySignupFinishForm: (any PasskeySignupFinishForm.Type)? = nil,
         ) {
             self.loginForm = loginForm ?? DefaultLoginForm.self
             self.logoutForm = logoutForm ?? DefaultLogoutForm.self
@@ -66,6 +72,9 @@ public extension Passage {
             self.emailMagicLinkResendForm = emailMagicLinkResendForm ?? DefaultEmailMagicLinkResendForm.self
             self.linkAccountSelectForm = linkAccountSelectForm ?? DefaultLinkAccountSelectForm.self
             self.linkAccountVerifyForm = linkAccountVerifyForm ?? DefaultLinkAccountVerifyForm.self
+            self.passkeySignupBeginForm = passkeySignupBeginForm ?? DefaultPasskeySignupBeginForm.self
+            self.passkeyAuthenticationFinishForm = passkeyAuthenticationFinishForm ?? DefaultPasskeyAuthenticationFinishForm.self
+            self.passkeySignupFinishForm = passkeySignupFinishForm ?? DefaultPasskeySignupFinishForm.self
         }
     }
 

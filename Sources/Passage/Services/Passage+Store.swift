@@ -11,8 +11,17 @@ public extension Passage {
         var restorationCodes: any RestorationCodeStore { get }
         var magicLinkTokens: any MagicLinkTokenStore { get }
         var exchangeTokens: any ExchangeTokenStore { get }
+        var passkeyCredentials: (any PasskeyCredentialStore)? { get }
+        var passkeyChallenges: (any PasskeyChallengeStore)? { get }
     }
 
+}
+
+// MARK: - Store Defaults
+
+public extension Passage.Store {
+    var passkeyCredentials: (any Passage.PasskeyCredentialStore)? { nil }
+    var passkeyChallenges: (any Passage.PasskeyChallengeStore)? { nil }
 }
 
 // MARK: - User Store
@@ -260,6 +269,58 @@ public extension Passage {
         /// Clean up expired exchange tokens
         /// - Parameter date: Remove tokens expired before this date
         func cleanupExpiredTokens(before date: Date) async throws
+    }
+
+}
+
+// MARK: - Passkey Credential Store
+
+public extension Passage {
+
+    protocol PasskeyCredentialStore: Sendable {
+
+        @discardableResult
+        func createCredential(
+            id: String,
+            publicKey: [UInt8],
+            signCount: UInt32,
+            backupEligible: Bool,
+            isBackedUp: Bool,
+            for user: any User
+        ) async throws -> any PasskeyCredential
+
+        func findCredential(byId id: String) async throws -> (any PasskeyCredential)?
+
+        func credentialExists(id: String) async throws -> Bool
+
+        func updateSignCount(_ signCount: UInt32, for credentialId: String) async throws
+
+        func findCredentials(forUser user: any User) async throws -> [any PasskeyCredential]
+    }
+
+}
+
+// MARK: - Passkey Challenge Store
+
+public extension Passage {
+
+    enum PasskeyChallengeType: String, Sendable {
+        case registration
+        case authentication
+    }
+
+    protocol PasskeyChallengeStore: Sendable {
+
+        func storeChallenge(
+            _ challenge: [UInt8],
+            for key: String,
+            type: PasskeyChallengeType
+        ) async throws
+
+        func retrieveAndDeleteChallenge(
+            for key: String,
+            type: PasskeyChallengeType
+        ) async throws -> [UInt8]?
     }
 
 }

@@ -154,6 +154,16 @@ extension Passage.OnlyForTest {
         var consumedAt: Date?
         var createdAt: Date?
     }
+
+    struct InMemoryPasskeyCredentialModel: PasskeyCredential, @unchecked Sendable {
+        var id: String
+        var publicKey: [UInt8]
+        var currentSignCount: UInt32
+        var user: InMemoryUser
+        var backupEligible: Bool
+        var isBackedUp: Bool
+        var createdAt: Date
+    }
 }
 
 // MARK: - InMemoryUserStore
@@ -702,6 +712,97 @@ public extension Passage.OnlyForTest.InMemoryStore {
 
         public func cleanupExpiredTokens(before date: Date) async throws {
             tokens = tokens.filter { $0.value.expiresAt >= date }
+        }
+    }
+
+}
+
+// MARK: - InMemoryPasskeyCredentialStore
+
+public extension Passage.OnlyForTest.InMemoryStore {
+
+    final class InMemoryPasskeyCredentialStore: Passage.PasskeyCredentialStore, @unchecked Sendable {
+
+        private var credentials: [String: Passage.OnlyForTest.InMemoryPasskeyCredentialModel] = [:]
+
+        @discardableResult
+        public func createCredential(
+            id: String,
+            publicKey: [UInt8],
+            signCount: UInt32,
+            backupEligible: Bool,
+            isBackedUp: Bool,
+            for user: any User
+        ) async throws -> any PasskeyCredential {
+            guard let userId = user.id?.description else {
+                throw PassageError.unexpected(message: "User ID is missing")
+            }
+            let inMemoryUser = Passage.OnlyForTest.InMemoryUser(
+                id: userId,
+                email: user.email,
+                phone: user.phone,
+                username: user.username,
+                passwordHash: user.passwordHash,
+                isAnonymous: user.isAnonymous,
+                isEmailVerified: user.isEmailVerified,
+                isPhoneVerified: user.isPhoneVerified
+            )
+            let credential = Passage.OnlyForTest.InMemoryPasskeyCredentialModel(
+                id: id,
+                publicKey: publicKey,
+                currentSignCount: signCount,
+                user: inMemoryUser,
+                backupEligible: backupEligible,
+                isBackedUp: isBackedUp,
+                createdAt: Date()
+            )
+            credentials[id] = credential
+            return credential
+        }
+
+        public func findCredential(byId id: String) async throws -> (any PasskeyCredential)? {
+            return credentials[id]
+        }
+
+        public func credentialExists(id: String) async throws -> Bool {
+            return credentials[id] != nil
+        }
+
+        public func updateSignCount(_ signCount: UInt32, for credentialId: String) async throws {
+            credentials[credentialId]?.currentSignCount = signCount
+        }
+
+        public func findCredentials(forUser user: any User) async throws -> [any PasskeyCredential] {
+            guard let userId = user.id?.description else { return [] }
+            return credentials.values.filter { $0.user.id == userId }
+        }
+    }
+
+}
+
+// MARK: - InMemoryPasskeyChallengeStore
+
+public extension Passage.OnlyForTest.InMemoryStore {
+
+    final class InMemoryPasskeyChallengeStore: Passage.PasskeyChallengeStore, @unchecked Sendable {
+
+        private var challenges: [String: [UInt8]] = [:]
+
+        public func storeChallenge(
+            _ challenge: [UInt8],
+            for key: String,
+            type: Passage.PasskeyChallengeType
+        ) async throws {
+            let storageKey = "\(type.rawValue):\(key)"
+            challenges[storageKey] = challenge
+        }
+
+        public func retrieveAndDeleteChallenge(
+            for key: String,
+            type: Passage.PasskeyChallengeType
+        ) async throws -> [UInt8]? {
+            let storageKey = "\(type.rawValue):\(key)"
+            return challenges.removeValue(forKey: storageKey)
         }
     }
 

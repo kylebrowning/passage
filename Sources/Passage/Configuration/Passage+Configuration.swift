@@ -16,6 +16,7 @@ extension Passage {
         let restoration: Restoration
         let federatedLogin: FederatedLogin
         let views: Views
+        let passkey: Passkey?
 
         public init(
             origin: URL,
@@ -27,7 +28,8 @@ extension Passage {
             verification: Verification = .init(),
             restoration: Restoration = .init(),
             federatedLogin: FederatedLogin = .init(routes: .init(), providers: []),
-            views: Views = .init()
+            views: Views = .init(),
+            passkey: Passkey? = nil
         ) throws {
             self.origin = origin
             self.routes = routes
@@ -39,6 +41,7 @@ extension Passage {
             self.restoration = restoration
             self.federatedLogin = federatedLogin
             self.views = views
+            self.passkey = passkey
         }
     }
 }
